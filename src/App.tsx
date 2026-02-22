@@ -18,6 +18,7 @@ import SrpSearchPage from './pages/SrpSearchPage';
 import GraphqlExposurePage from './pages/GraphqlExposurePage';
 import DeploymentConfigPage from './pages/DeploymentConfigPage';
 import GlossaryPage from './pages/GlossaryPage';
+import ReactorOperatorsPage from './pages/ReactorOperatorsPage';
 
 /* ---------- routes ---------- */
 
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/graphql-exposure" element={<GraphqlExposurePage />} />
         <Route path="/deployment-config" element={<DeploymentConfigPage />} />
         <Route path="/glossary" element={<GlossaryPage />} />
+        <Route path="/reactor-operators" element={<ReactorOperatorsPage />} />
       </Route>
     </Routes>
   );
