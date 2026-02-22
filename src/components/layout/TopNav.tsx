@@ -61,10 +61,16 @@ const activeLinkStyle: CSSProperties = {
 
 const links = [
   { to: '/', label: 'Home' },
+  { to: '/backend-services', label: 'Backend Services' },
   { to: '/products-api', label: 'Products-Api' },
   { to: '/fi-architecture', label: 'F&I Architecture' },
   { to: '/sync-flows', label: 'Sync Flows' },
   { to: '/odyssey-deep-dive', label: 'Odyssey Deep Dive' },
+  { to: '/odyssey-pipelines', label: 'Pipelines' },
+  { to: '/odyssey-endpoints', label: 'Endpoints' },
+  { to: '/odyssey-services', label: 'Services' },
+  { to: '/odyssey-gradle', label: 'Gradle' },
+  { to: '/ownership-landing', label: 'Ownership Landing' },
 ] as const;
 
 /* ------------------------------------------------------------------ */

@@ -23,6 +23,31 @@ const C = {
   accent: '#3b82f6',
 };
 
+// ---- Global unique ID counter (prevents collisions across instances) ----
+let globalIdCounter = 0;
+
+// ---- Serialized render queue (mermaid.render is NOT safe to call concurrently) ----
+let renderQueue: Promise<void> = Promise.resolve();
+
+function enqueueRender(
+  id: string,
+  source: string,
+): Promise<{ svg: string }> {
+  return new Promise((resolve, reject) => {
+    renderQueue = renderQueue.then(async () => {
+      try {
+        const result = await mermaid.render(id, source);
+        resolve(result);
+      } catch (err) {
+        // Clean up orphaned DOM element that mermaid may have created
+        const orphan = document.getElementById(`d${id}`);
+        if (orphan) orphan.remove();
+        reject(err);
+      }
+    });
+  });
+}
+
 // ---- Mermaid init (once) ----
 let mermaidInitialized = false;
 function ensureMermaidInit() {
@@ -143,13 +168,14 @@ function tabStyle(isActive: boolean): React.CSSProperties {
 
 const svgContainerStyle: React.CSSProperties = {
   padding: '24px',
-  overflow: 'auto',
+  overflow: 'hidden',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'flex-start',
   minHeight: '300px',
   background: C.bg,
   position: 'relative',
+  cursor: 'grab',
 };
 
 const sourceContainerStyle: React.CSSProperties = {
@@ -195,11 +221,20 @@ const fullscreenHeaderStyle: React.CSSProperties = {
 
 const fullscreenBodyStyle: React.CSSProperties = {
   flex: 1,
-  overflow: 'auto',
+  overflow: 'hidden',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
   padding: '24px',
+  cursor: 'grab',
+};
+
+const loadingStyle: React.CSSProperties = {
+  color: C.text2,
+  fontSize: '13px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
 };
 
 // ---- Component ----
@@ -207,59 +242,120 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [showSource, setShowSource] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [fullscreen, setFullscreen] = useState(false);
   const [svgContent, setSvgContent] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const renderIdRef = useRef(0);
+  const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgWrapperRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const panStart = useRef({ x: 0, y: 0 });
 
   const currentTab = tabs[activeTab] ?? tabs[0];
 
-  // Render mermaid diagram
+  // Render mermaid diagram (serialized via queue)
   useEffect(() => {
     ensureMermaidInit();
     let cancelled = false;
-    const id = `mermaid-${++renderIdRef.current}`;
+    const id = `mmd-${++globalIdCounter}-${Date.now()}`;
 
-    const renderDiagram = async () => {
-      try {
-        const { svg } = await mermaid.render(id, currentTab.source);
+    setLoading(true);
+    setSvgContent('');
+    setError(null);
+
+    enqueueRender(id, currentTab.source)
+      .then(({ svg }) => {
         if (!cancelled) {
           setSvgContent(svg);
           setError(null);
+          setLoading(false);
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : 'Failed to render diagram'
+            err instanceof Error ? err.message : 'Failed to render diagram',
           );
           setSvgContent('');
+          setLoading(false);
         }
-        // Clean up any orphaned render element
-        const orphan = document.getElementById(`d${id}`);
-        if (orphan) orphan.remove();
-      }
-    };
+      });
 
-    renderDiagram();
     return () => {
       cancelled = true;
     };
   }, [currentTab.source]);
 
-  // Reset zoom when switching tabs
+  // Reset zoom & pan when switching tabs
   useEffect(() => {
     setZoom(1);
+    setPan({ x: 0, y: 0 });
   }, [activeTab]);
 
-  const zoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 3)), []);
-  const zoomOut = useCallback(
-    () => setZoom((z) => Math.max(z - 0.2, 0.3)),
-    []
+  const clampZoom = useCallback(
+    (z: number) => Math.min(Math.max(z, 0.2), 5),
+    [],
   );
-  const zoomReset = useCallback(() => setZoom(1), []);
+  const zoomIn = useCallback(
+    () => setZoom((z) => clampZoom(z + 0.2)),
+    [clampZoom],
+  );
+  const zoomOut = useCallback(
+    () => setZoom((z) => clampZoom(z - 0.2)),
+    [clampZoom],
+  );
+  const zoomReset = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
 
   const toggleFullscreen = useCallback(() => setFullscreen((f) => !f), []);
+
+  // Ctrl/Cmd + mouse wheel zoom
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handler = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoom((z) => clampZoom(z + delta));
+      }
+    };
+
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, [clampZoom, fullscreen]);
+
+  // Mouse drag to pan
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      isDragging.current = true;
+      dragStart.current = { x: e.clientX, y: e.clientY };
+      panStart.current = { ...pan };
+      (e.currentTarget as HTMLElement).style.cursor = 'grabbing';
+    },
+    [pan],
+  );
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    setPan({
+      x: panStart.current.x + dx,
+      y: panStart.current.y + dy,
+    });
+  }, []);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    isDragging.current = false;
+    (e.currentTarget as HTMLElement).style.cursor = 'grab';
+  }, []);
 
   // Keyboard escape for fullscreen
   useEffect(() => {
@@ -273,14 +369,25 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
 
   const diagramHtml = (
     <div
-      ref={containerRef}
+      ref={svgWrapperRef}
       style={{
-        transform: `scale(${zoom})`,
+        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
         transformOrigin: 'center center',
-        transition: 'transform 0.15s ease',
+        transition: isDragging.current ? 'none' : 'transform 0.15s ease',
+        userSelect: 'none',
       }}
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
+  );
+
+  const loadingDisplay = (
+    <div style={loadingStyle}>
+      <svg width="16" height="16" viewBox="0 0 24 24" style={{ animation: 'spin 1s linear infinite' }}>
+        <circle cx="12" cy="12" r="10" stroke={C.text2} strokeWidth="3" fill="none" strokeDasharray="32" strokeDashoffset="12" />
+      </svg>
+      Rendering diagram...
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   );
 
   const errorDisplay = error && (
@@ -295,9 +402,52 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
         fontFamily: 'monospace',
         whiteSpace: 'pre-wrap',
         margin: '16px',
+        maxWidth: '100%',
+        overflow: 'auto',
       }}
     >
       {error}
+    </div>
+  );
+
+  const zoomHint = (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 8,
+        right: 12,
+        fontSize: '10px',
+        color: C.text2,
+        opacity: 0.5,
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}
+    >
+      Ctrl/Cmd + Scroll to zoom &middot; Drag to pan
+    </div>
+  );
+
+  const controlsBar = (
+    <div style={controlBarStyle}>
+      <button style={iconBtnStyle} onClick={zoomOut} title="Zoom Out">
+        -
+      </button>
+      <span
+        style={{
+          color: C.text2,
+          fontSize: '11px',
+          minWidth: '40px',
+          textAlign: 'center',
+        }}
+      >
+        {Math.round(zoom * 100)}%
+      </span>
+      <button style={iconBtnStyle} onClick={zoomIn} title="Zoom In">
+        +
+      </button>
+      <button style={iconBtnStyle} onClick={zoomReset} title="Reset Zoom">
+        1:1
+      </button>
     </div>
   );
 
@@ -308,20 +458,7 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
         <div style={fullscreenHeaderStyle}>
           <span style={titleStyle}>{title}</span>
           <div style={controlBarStyle}>
-            <button style={iconBtnStyle} onClick={zoomOut} title="Zoom Out">
-              -
-            </button>
-            <span
-              style={{ color: C.text2, fontSize: '11px', minWidth: '40px', textAlign: 'center' }}
-            >
-              {Math.round(zoom * 100)}%
-            </span>
-            <button style={iconBtnStyle} onClick={zoomIn} title="Zoom In">
-              +
-            </button>
-            <button style={iconBtnStyle} onClick={zoomReset} title="Reset Zoom">
-              1:1
-            </button>
+            {controlsBar}
             <button
               style={{ ...textBtnStyle, color: '#ef4444', borderColor: '#7f1d1d' }}
               onClick={toggleFullscreen}
@@ -330,8 +467,16 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
             </button>
           </div>
         </div>
-        <div style={fullscreenBodyStyle}>
-          {error ? errorDisplay : diagramHtml}
+        <div
+          ref={containerRef}
+          style={fullscreenBodyStyle}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          {loading ? loadingDisplay : error ? errorDisplay : diagramHtml}
+          {zoomHint}
         </div>
       </div>
     );
@@ -344,20 +489,7 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
       <div style={headerStyle}>
         <span style={titleStyle}>{title}</span>
         <div style={controlBarStyle}>
-          <button style={iconBtnStyle} onClick={zoomOut} title="Zoom Out">
-            -
-          </button>
-          <span
-            style={{ color: C.text2, fontSize: '11px', minWidth: '40px', textAlign: 'center' }}
-          >
-            {Math.round(zoom * 100)}%
-          </span>
-          <button style={iconBtnStyle} onClick={zoomIn} title="Zoom In">
-            +
-          </button>
-          <button style={iconBtnStyle} onClick={zoomReset} title="Reset Zoom">
-            1:1
-          </button>
+          {controlsBar}
           <button
             style={iconBtnStyle}
             onClick={toggleFullscreen}
@@ -369,7 +501,11 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
             style={{
               ...textBtnStyle,
               ...(showSource
-                ? { borderColor: C.accent, color: C.accent, background: `${C.accent}15` }
+                ? {
+                    borderColor: C.accent,
+                    color: C.accent,
+                    background: `${C.accent}15`,
+                  }
                 : {}),
             }}
             onClick={() => setShowSource((s) => !s)}
@@ -395,8 +531,16 @@ const MermaidViewer: React.FC<MermaidViewerProps> = ({ tabs, title }) => {
       )}
 
       {/* Diagram area */}
-      <div style={svgContainerStyle}>
-        {error ? errorDisplay : diagramHtml}
+      <div
+        ref={containerRef}
+        style={svgContainerStyle}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        {loading ? loadingDisplay : error ? errorDisplay : diagramHtml}
+        {zoomHint}
       </div>
 
       {/* Source panel */}

@@ -1,18 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useActiveSection } from '../../hooks/useActiveSection';
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-export interface SidebarSection {
-  id: string;
-  label: string;
-}
-
-interface SidebarProps {
-  sections: SidebarSection[];
-}
+import { useSidebar } from '../../context/SidebarContext';
 
 /* ------------------------------------------------------------------ */
 /*  Styles                                                             */
@@ -63,10 +51,10 @@ const toggleBtnOpen: CSSProperties = {
 
 const heading: CSSProperties = {
   fontSize: '0.7rem',
-  fontWeight: 600,
+  fontWeight: 700,
   textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  color: 'var(--text3)',
+  letterSpacing: '0.1em',
+  color: 'var(--accent)',
   marginBottom: '0.75rem',
   paddingLeft: '0.5rem',
 };
@@ -104,8 +92,9 @@ const activeLinkStyle: CSSProperties = {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function Sidebar({ sections }: SidebarProps) {
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { sections, title } = useSidebar();
   const activeId = useActiveSection(sections.map((s) => s.id));
 
   const handleClick = (id: string) => {
@@ -130,7 +119,7 @@ export default function Sidebar({ sections }: SidebarProps) {
       <aside style={collapsed ? asideCollapsed : aside}>
         {sections.length > 0 && (
           <>
-            <div style={heading}>On this page</div>
+            {title && <div style={heading}>{title}</div>}
             <ul style={listStyle}>
               {sections.map(({ id, label }) => (
                 <li key={id}>
@@ -165,7 +154,7 @@ export default function Sidebar({ sections }: SidebarProps) {
 
         {sections.length === 0 && (
           <p style={{ color: 'var(--text3)', fontSize: '0.8rem', padding: '0.5rem' }}>
-            No sections on this page.
+            Select a page to view its sections.
           </p>
         )}
       </aside>

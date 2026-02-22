@@ -46,10 +46,10 @@ const badges: { label: string; color: string }[] = [
 ];
 
 const stats: { value: string; label: string; color: string }[] = [
-  { value: '5', label: 'Pages', color: c.accent },
-  { value: '9', label: 'Services', color: c.green },
-  { value: '23+', label: 'Diagrams', color: c.accent3 },
-  { value: '3', label: 'Interactive Demos', color: c.pink },
+  { value: '17', label: 'Pages', color: c.accent },
+  { value: '13+', label: 'Services', color: c.green },
+  { value: '80+', label: 'Diagrams', color: c.accent3 },
+  { value: '4', label: 'Interactive Demos', color: c.pink },
 ];
 
 interface NavCard {
@@ -96,7 +96,28 @@ const odysseyIcon = (
   </svg>
 );
 
+const servicesIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="6" height="6" rx="1" />
+    <rect x="16" y="2" width="6" height="6" rx="1" />
+    <rect x="2" y="16" width="6" height="6" rx="1" />
+    <rect x="16" y="16" width="6" height="6" rx="1" />
+    <path d="M8 5h8" />
+    <path d="M8 19h8" />
+    <path d="M5 8v8" />
+    <path d="M19 8v8" />
+  </svg>
+);
+
 const navCards: NavCard[] = [
+  {
+    title: 'Backend Services Architecture',
+    to: '/backend-services',
+    description:
+      '13+ microservices ecosystem. Full architecture diagrams, service explorer, data flows, Azure Service Bus, database architecture, and infrastructure.',
+    color: c.pink,
+    icon: servicesIcon,
+  },
   {
     title: 'Products-Api Flow',
     to: '/products-api',
@@ -128,6 +149,142 @@ const navCards: NavCard[] = [
       'Kotlin/Spring Boot reactive backend. EDS import pipeline, Project Reactor tutorial, MongoDB patterns, Azure integrations, and 13 Mermaid diagrams.',
     color: c.cyan,
     icon: odysseyIcon,
+  },
+  {
+    title: 'Pipelines & Deployment',
+    to: '/odyssey-pipelines',
+    description:
+      'Complete CI/CD pipeline documentation. 8 pipeline files, Docker multi-stage builds, Terraform infrastructure, Helm configs, secrets management, and monitoring alerts.',
+    color: c.yellow,
+    icon: syncIcon,
+  },
+  {
+    title: 'Endpoints & GraphQL',
+    to: '/odyssey-endpoints',
+    description:
+      'Every REST endpoint and GraphQL operation. 7 REST routes, 15+ queries/mutations, search pipeline deep dive, third-party API integrations, and data models.',
+    color: c.accent,
+    icon: rocketIcon,
+  },
+  {
+    title: 'Services & Workers',
+    to: '/odyssey-services',
+    description:
+      'Background services documentation. 5 cron jobs, leasing consumer, availability subscriber, Service Bus topics, EDS import pipeline, and complete data flows.',
+    color: c.green,
+    icon: archIcon,
+  },
+  {
+    title: 'Gradle & Architecture',
+    to: '/odyssey-gradle',
+    description:
+      '9-module Gradle project architecture. Build configuration, 30+ dependencies, MongoDB collections, Atlas Search indexes, Spring profiles, and testing strategy.',
+    color: c.accent3,
+    icon: odysseyIcon,
+  },
+];
+
+const searchIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const clockIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const databaseIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3" />
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+  </svg>
+);
+
+const codeIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
+const serverIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+    <line x1="6" y1="6" x2="6.01" y2="6" />
+    <line x1="6" y1="18" x2="6.01" y2="18" />
+  </svg>
+);
+
+const bookIcon = (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </svg>
+);
+
+const odysseyNavCards: NavCard[] = [
+  {
+    title: 'System Overview',
+    to: '/system-overview',
+    description:
+      'End-to-end architecture of inventory sync, search engine, and GraphQL layer. Component diagrams, sequence flows, and module relationships.',
+    color: c.accent,
+    icon: odysseyIcon,
+  },
+  {
+    title: 'Cron Jobs Deep Dive',
+    to: '/cron-deep-dive',
+    description:
+      '5 scheduled jobs documented: EDS import, lease expiry, region sync, DB cleanup, metrics. Retry strategies, failure modes, and observability.',
+    color: c.green,
+    icon: clockIcon,
+  },
+  {
+    title: 'Inventory Sync Pipeline',
+    to: '/inventory-sync',
+    description:
+      'Step-by-step flow from EDS file ingestion to live MongoDB collection. Temp imports, safety checks, delta publishing, and leasing consumer.',
+    color: c.accent3,
+    icon: databaseIcon,
+  },
+  {
+    title: 'SRP Search & Filtering',
+    to: '/srp-search',
+    description:
+      'MongoDB Atlas Search pipeline: 12+ filter types, scoring engine, pagination, availability, leasing/shipping calculations, and example queries.',
+    color: c.cyan,
+    icon: searchIcon,
+  },
+  {
+    title: 'GraphQL Exposure',
+    to: '/graphql-exposure',
+    description:
+      'All SRP/inventory GraphQL queries: search, facets, suggestions, vehicle lookups. Resolver flows, DTOs, input validation, and real examples.',
+    color: c.pink,
+    icon: codeIcon,
+  },
+  {
+    title: 'Deployment & Config',
+    to: '/deployment-config',
+    description:
+      'Kubernetes, Helm, Terraform, Docker, Spring profiles, and CI/CD pipelines for cron, search, and sync modules.',
+    color: c.yellow,
+    icon: serverIcon,
+  },
+  {
+    title: 'Glossary',
+    to: '/glossary',
+    description:
+      'Searchable glossary of 40+ terms: SRP, EDS, Atlas Search, idempotency, mark & sweep, and more. Organized by category.',
+    color: c.accent3,
+    icon: bookIcon,
   },
 ];
 
@@ -468,6 +625,56 @@ export default function HomePage() {
         <h2 style={sectionHeading}>Explore Documentation</h2>
         <div style={navGrid}>
           {navCards.map((card, i) => (
+            <motion.div
+              key={card.to}
+              {...stagger(i)}
+              whileHover={{
+                borderColor: card.color,
+                boxShadow: `0 4px 24px ${card.color}20`,
+                y: -3,
+              }}
+              style={makeNavCard(card.color)}
+            >
+              <Link
+                to={card.to}
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
+                <div style={makeIconWrap(card.color)}>{card.icon}</div>
+                <div style={navCardTitle}>{card.title}</div>
+                <div style={navCardDesc}>{card.description}</div>
+                <div style={makeArrowPill(card.color)}>
+                  Explore
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ---- Odyssey Inventory & Search ---- */}
+      <motion.div {...fadeUp} style={{ marginTop: '1rem' }}>
+        <h2 style={sectionHeading}>Odyssey Inventory & Search</h2>
+        <div style={navGrid}>
+          {odysseyNavCards.map((card, i) => (
             <motion.div
               key={card.to}
               {...stagger(i)}

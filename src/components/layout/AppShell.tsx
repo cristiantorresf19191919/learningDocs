@@ -6,15 +6,15 @@ import ProgressBar from './ProgressBar';
 const shellStyle: React.CSSProperties = {
   display: 'flex',
   minHeight: '100vh',
-  paddingTop: 60, // height of TopNav
+  paddingTop: 60,
 };
 
 const mainStyle: React.CSSProperties = {
   flex: 1,
   minWidth: 0,
-  padding: '0 2.5rem 4rem 2.5rem',
-  maxWidth: 960,
-  marginLeft: 260, // sidebar width
+  padding: '0 3rem 4rem 3rem',
+  maxWidth: 1200,
+  marginLeft: 260,
 };
 
 export default function AppShell() {
@@ -23,9 +23,7 @@ export default function AppShell() {
       <ProgressBar />
       <TopNav />
       <div style={shellStyle}>
-        <Sidebar
-          sections={[]}
-        />
+        <Sidebar />
         <main style={mainStyle}>
           <Outlet />
         </main>

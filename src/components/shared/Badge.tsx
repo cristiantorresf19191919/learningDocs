@@ -2,7 +2,7 @@ import React from 'react';
 
 interface BadgeProps {
   label: string;
-  color?: 'green' | 'blue' | 'purple' | 'yellow' | 'red' | 'cyan' | 'pink';
+  color?: 'green' | 'blue' | 'purple' | 'yellow' | 'red' | 'cyan' | 'pink' | 'orange';
   dot?: boolean;
 }
 
@@ -41,6 +41,11 @@ const colorMap: Record<string, { bg: string; text: string; dot: string }> = {
     bg: 'rgba(236, 72, 153, 0.12)',
     text: '#ec4899',
     dot: '#ec4899',
+  },
+  orange: {
+    bg: 'rgba(249, 115, 22, 0.12)',
+    text: '#f97316',
+    dot: '#f97316',
   },
 };
 
