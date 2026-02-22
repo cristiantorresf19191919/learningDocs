@@ -95,7 +95,7 @@ const heroContent: CSSProperties = {
 };
 
 const heroTitle: CSSProperties = {
-  fontSize: '3.2rem',
+  fontSize: 'clamp(1.75rem, 5vw, 3.2rem)',
   fontWeight: 800,
   lineHeight: 1.15,
   margin: '0 0 1.25rem',
@@ -120,25 +120,25 @@ const sectionSpacing: CSSProperties = {
 
 const cardGrid2: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
   gap: '1.25rem',
 };
 
 const cardGrid3: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
   gap: '1.25rem',
 };
 
 const cardGrid4: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
   gap: '1.25rem',
 };
 
 const stageCardGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
   gap: '1rem',
   marginTop: '2rem',
 };
@@ -498,7 +498,7 @@ export default function SyncFlowsPage() {
           height="620px"
         />
 
-        <div style={{ ...stageCardGrid, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+        <div style={{ ...stageCardGrid, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))' }}>
           {decisionPoints.map((dp, i) => (
             <motion.div key={dp.num} {...stagger(i)}>
               <Card>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import type { CSSProperties } from 'react';
 import { useSidebar } from '../context/SidebarContext';
 import CodeBlock from '../components/shared/CodeBlock';
@@ -49,6 +49,51 @@ const fadeUp = {
   transition: { duration: 0.5, ease: 'easeOut' as const },
 };
 
+const fadeIn = {
+  initial: { opacity: 0 },
+  whileInView: { opacity: 1 },
+  viewport: { once: true, amount: 0.1 },
+  transition: { duration: 0.6, ease: 'easeOut' as const },
+};
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.92 },
+  whileInView: { opacity: 1, scale: 1 },
+  viewport: { once: true, amount: 0.15 },
+  transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+};
+
+/* stagger container + item variants */
+const staggerContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const staggerItem: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+};
+
+/* card hover lift */
+const cardHover = {
+  whileHover: {
+    y: -4,
+    boxShadow: '0 8px 30px rgba(59,130,246,0.12), 0 2px 8px rgba(0,0,0,0.3)',
+    borderColor: 'rgba(59,130,246,0.35)',
+    transition: { duration: 0.25, ease: 'easeOut' as const },
+  },
+};
+
+/* enum card hover */
+const enumCardHover = {
+  whileHover: {
+    y: -3,
+    boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+    borderColor: 'rgba(59,130,246,0.3)',
+    transition: { duration: 0.2, ease: 'easeOut' as const },
+  },
+};
+
 /* ------------------------------------------------------------------ */
 /*  TOC data                                                           */
 /* ------------------------------------------------------------------ */
@@ -81,7 +126,7 @@ const tocItems = [
 const heroSection: CSSProperties = {
   position: 'relative',
   textAlign: 'center',
-  padding: '5rem 0 4rem',
+  padding: 'clamp(3rem, 8vw, 5rem) 0 clamp(2.5rem, 6vw, 4rem)',
   overflow: 'hidden',
 };
 
@@ -116,33 +161,35 @@ const heroTitle: CSSProperties = {
 };
 
 const heroSubtitle: CSSProperties = {
-  fontSize: '1.1rem',
+  fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)',
   color: c.text2,
   maxWidth: 700,
   margin: '0 auto',
   lineHeight: 1.8,
+  padding: '0 1rem',
 };
 
 const statsRow: CSSProperties = {
-  display: 'flex',
-  justifyContent: 'center',
-  gap: '1.5rem',
-  marginTop: '2.5rem',
-  flexWrap: 'wrap',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(120px, 100%), 1fr))',
+  gap: 'clamp(0.75rem, 2vw, 1.5rem)',
+  marginTop: 'clamp(1.5rem, 4vw, 2.5rem)',
+  maxWidth: 600,
+  marginLeft: 'auto',
+  marginRight: 'auto',
 };
 
 const statBox: CSSProperties = {
   textAlign: 'center',
-  padding: '1rem 2rem',
+  padding: 'clamp(0.75rem, 2vw, 1rem) clamp(1rem, 3vw, 2rem)',
   backgroundColor: c.surface,
   borderRadius: 12,
   border: `1px solid ${c.border}`,
-  minWidth: 120,
   backdropFilter: 'blur(8px)',
 };
 
 const statVal: CSSProperties = {
-  fontSize: '1.75rem',
+  fontSize: 'clamp(1.35rem, 3.5vw, 1.75rem)',
   fontWeight: 800,
   color: c.accent,
 };
@@ -156,7 +203,7 @@ const statLabel: CSSProperties = {
 };
 
 const sectionSpacing: CSSProperties = {
-  marginTop: '5rem',
+  marginTop: 'clamp(3rem, 8vw, 5rem)',
 };
 
 const para: CSSProperties = {
@@ -167,10 +214,10 @@ const para: CSSProperties = {
 };
 
 const subHeading: CSSProperties = {
-  fontSize: '1.3rem',
+  fontSize: 'clamp(1.1rem, 3vw, 1.3rem)',
   fontWeight: 700,
   color: c.text,
-  marginTop: '2.5rem',
+  marginTop: 'clamp(1.5rem, 4vw, 2.5rem)',
   marginBottom: '1rem',
 };
 
@@ -178,14 +225,14 @@ const spacer: CSSProperties = { marginTop: '2rem' };
 
 const cardGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
   gap: '1rem',
   marginTop: '1rem',
 };
 
 const cardGrid3: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
   gap: '1rem',
   marginTop: '1rem',
 };
@@ -194,8 +241,7 @@ const infoCard: CSSProperties = {
   backgroundColor: c.surface,
   border: `1px solid ${c.border}`,
   borderRadius: 12,
-  padding: '1.5rem',
-  transition: 'all 0.2s ease',
+  padding: 'clamp(1rem, 3vw, 1.5rem)',
 };
 
 const infoCardTitle: CSSProperties = {
@@ -215,13 +261,13 @@ const keyTakeaway: CSSProperties = {
   backgroundColor: 'rgba(59,130,246,0.06)',
   border: `1px solid rgba(59,130,246,0.2)`,
   borderRadius: 12,
-  padding: '1.25rem 1.5rem',
+  padding: 'clamp(1rem, 3vw, 1.25rem) clamp(1rem, 3vw, 1.5rem)',
   marginTop: '1.5rem',
 };
 
 const sideBySide: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
   gap: '1rem',
   marginTop: '1rem',
 };
@@ -230,7 +276,7 @@ const enumCard: CSSProperties = {
   backgroundColor: c.surface,
   border: `1px solid ${c.border}`,
   borderRadius: 12,
-  padding: '1rem 1.25rem',
+  padding: 'clamp(0.75rem, 2vw, 1rem) clamp(1rem, 2.5vw, 1.25rem)',
 };
 
 const enumTitle: CSSProperties = {
@@ -254,8 +300,9 @@ function CollapsibleCode({ title, language, code }: { title: string; language: s
   const [open, setOpen] = useState(false);
   return (
     <div style={{ marginTop: '1rem' }}>
-      <button
+      <motion.button
         onClick={() => setOpen(!open)}
+        whileHover={{ backgroundColor: c.surface2 }}
         style={{
           background: c.surface,
           border: `1px solid ${c.border}`,
@@ -270,19 +317,28 @@ function CollapsibleCode({ title, language, code }: { title: string; language: s
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          transition: 'all 0.2s',
         }}
       >
         <span>{title}</span>
-        <span style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          style={{ display: 'inline-block' }}
+        >
           &#9660;
-        </span>
-      </button>
-      {open && (
-        <div style={{ marginTop: '0.5rem' }}>
-          <CodeBlock language={language} code={code} />
-        </div>
-      )}
+        </motion.span>
+      </motion.button>
+      <motion.div
+        initial={false}
+        animate={{
+          height: open ? 'auto' : 0,
+          opacity: open ? 1 : 0,
+        }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
+        style={{ overflow: 'hidden', marginTop: open ? '0.5rem' : 0 }}
+      >
+        <CodeBlock language={language} code={code} />
+      </motion.div>
     </div>
   );
 }
@@ -725,19 +781,30 @@ export default function OdysseyDeepDivePage() {
             A comprehensive guide for JavaScript developers joining the Kotlin/Spring Boot
             reactive backend
           </p>
-          <div style={statsRow}>
+          <motion.div
+            style={statsRow}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.3 }}
+          >
             {[
               { val: '5', label: 'Services' },
               { val: '9', label: 'Modules' },
               { val: '15', label: 'Diagrams' },
               { val: '100K+', label: 'Vehicles' },
             ].map((s) => (
-              <div key={s.label} style={statBox}>
+              <motion.div
+                key={s.label}
+                style={statBox}
+                variants={staggerItem}
+                whileHover={{ y: -3, borderColor: c.accent, transition: { duration: 0.2 } }}
+              >
                 <div style={statVal}>{s.val}</div>
                 <div style={statLabel}>{s.label}</div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -780,15 +847,15 @@ Shared Libraries (not deployed):
  [tests] ──── Integration tests (run post-deploy)`} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Full System Architecture" tabs={[{ label: 'System Architecture', source: mermaidFullArch }]} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Module Dependencies" tabs={[{ label: 'Module Dependencies', source: mermaidModuleDeps }]} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Service Bus Topic Topology" tabs={[{ label: 'Topic Topology', source: mermaidServiceBusTopology }]} />
         </motion.div>
       </section>
@@ -808,11 +875,11 @@ Shared Libraries (not deployed):
           <StepByStepFlow title="EDS Import Pipeline - Step by Step" steps={edsImportSteps} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="EDS Import Sequence Diagram" tabs={[{ label: 'Import Sequence', source: mermaidEdsSequence }]} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...fadeIn} style={spacer}>
           <h3 style={subHeading}>Interactive Pipeline Demo</h3>
           <EdsPipelineDemo />
         </motion.div>
@@ -882,7 +949,7 @@ fun getInventoryDeltas(tempCollection: String, liveCollection: String): List<Inv
 }`} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Delta Computation Flowchart" tabs={[{ label: 'Delta Flowchart', source: mermaidDeltaFlowchart }]} />
         </motion.div>
       </section>
@@ -971,7 +1038,7 @@ data class RegionData(
           </div>
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Lease Expiry Decision Flow" tabs={[{ label: 'Expiry Flow', source: mermaidLeaseExpiry }]} />
         </motion.div>
       </section>
@@ -997,11 +1064,11 @@ data class RegionData(
           <MermaidViewer title="Leasing Message Processing" tabs={[{ label: 'Leasing Sequence', source: mermaidLeasingSequence }]} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Cart Status Update" tabs={[{ label: 'Cart Sequence', source: mermaidCartSequence }]} />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="Search Request Processing" tabs={[{ label: 'Search Sequence', source: mermaidSearchSequence }]} />
         </motion.div>
       </section>
@@ -1094,7 +1161,7 @@ searchVehicles("Toyota Camry")
           />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...fadeIn} style={spacer}>
           <h3 style={subHeading}>Interactive: Mono Subscribe Lifecycle</h3>
           <MonoLifecycleDemo />
         </motion.div>
@@ -1102,7 +1169,7 @@ searchVehicles("Toyota Camry")
         <motion.div {...fadeUp} style={spacer}>
           <h3 style={subHeading}>Blocking vs Non-Blocking</h3>
           <div style={sideBySide}>
-            <div style={{ ...infoCard, borderColor: c.red }}>
+            <motion.div style={{ ...infoCard, borderColor: c.red }} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.red }}>Blocking (Traditional)</div>
               <div style={infoCardText}>
                 Thread 1: [--- DB Query ---][--- HTTP Call ---][--- Response ---]<br />
@@ -1110,23 +1177,26 @@ searchVehicles("Toyota Camry")
                 Thread 3: [--- waiting... ---][--- waiting... ---][--- DB Query ---]<br /><br />
                 Each request holds a thread for its entire duration. With 200 threads, you can handle 200 concurrent requests max.
               </div>
-            </div>
-            <div style={{ ...infoCard, borderColor: c.accent2 }}>
+            </motion.div>
+            <motion.div style={{ ...infoCard, borderColor: c.accent2 }} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent2 }}>Non-Blocking (Reactive)</div>
               <div style={infoCardText}>
                 Thread 1: [DB Q1][HTTP C2][DB Q3][Resp1][HTTP C4]...<br />
                 Thread 2: [HTTP C1][DB Q2][Resp2][DB Q4][Resp3]...<br /><br />
                 Threads are released during I/O waits. A small pool (2-4 threads) can handle thousands of concurrent requests. This is how Node.js event loop works too!
               </div>
-            </div>
+            </motion.div>
           </div>
-          <div style={keyTakeaway}>
+          <motion.div
+            style={keyTakeaway}
+            whileHover={{ borderColor: 'rgba(59,130,246,0.45)', backgroundColor: 'rgba(59,130,246,0.09)', transition: { duration: 0.25 } }}
+          >
             <strong style={{ color: c.accent }}>Key Takeaway:</strong>{' '}
             <span style={{ color: c.text2 }}>
               Never block a reactive thread. Use .flatMap() for async operations, not .map() with .block().
               BlockHound will catch violations at test time.
             </span>
-          </div>
+          </motion.div>
         </motion.div>
 
         <motion.div {...fadeUp} style={spacer}>
@@ -1198,7 +1268,7 @@ fun getVehicleWithDetails(vin: String): Mono<VehicleDetail> =
           />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...fadeIn} style={spacer}>
           <h3 style={subHeading}>Interactive: Reactive Pipeline Demo</h3>
           <ReactivePipelineDemo />
         </motion.div>
@@ -1700,7 +1770,7 @@ fun buildSearchPipeline(request: SearchRequest): List<Bson> = buildList {
       <section id="db-operations" style={sectionSpacing}>
         <SectionHeader label="Database Deep Dive" title="MongoDB Operations Map" description="Every database operation across all 5 services, filterable by collection, operation type, and module" />
 
-        <motion.div {...fadeUp}>
+        <motion.div {...fadeIn}>
           <p style={para}>
             This interactive visualization maps every MongoDB operation performed by Odyssey's 5 services.
             Filter by collection, operation type, or module to understand exactly how data flows through the database layer.
@@ -1877,7 +1947,7 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
       <section id="api-endpoints" style={sectionSpacing}>
         <SectionHeader label="Endpoints" title="APIs" description="GraphQL queries, REST endpoints, and mutations" />
 
-        <motion.div {...fadeUp}>
+        <motion.div {...scaleIn}>
           <MermaidViewer title="GraphQL Query Surface" tabs={[{ label: 'Query Surface', source: mermaidGraphqlSurface }]} />
         </motion.div>
 
@@ -1919,36 +1989,42 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
 
         <motion.div {...fadeUp} style={spacer}>
           <h3 style={subHeading}>GraphQL Mutations</h3>
-          <div style={cardGrid}>
-            <div style={infoCard}>
+          <motion.div
+            style={cardGrid}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+          >
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent }}>Vehicle Mutations</div>
               <div style={infoCardText}>
                 <strong>suppressVehicle(vin)</strong> -- Mark vehicle as manually suppressed<br />
                 <strong>unsuppressVehicle(vin)</strong> -- Remove manual suppression
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent2 }}>Score Mutations</div>
               <div style={infoCardText}>
                 <strong>updateScoreWeights(weights)</strong> -- Adjust search ranking factors<br />
                 <strong>resetScoreWeights()</strong> -- Reset to default weights
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent3 }}>Admin Mutations</div>
               <div style={infoCardText}>
                 <strong>triggerReindex()</strong> -- Force Atlas Search index rebuild<br />
                 <strong>publishVehicleData(vin)</strong> -- Push vehicle to vehicle-data-topic
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.orange }}>Image Mutations</div>
               <div style={infoCardText}>
                 <strong>refreshImages(vin)</strong> -- Re-fetch images from MaxDigital<br />
                 <strong>setHeroImage(vin, url)</strong> -- Override the hero image URL
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
 
         <motion.div {...fadeUp} style={spacer}>
@@ -1971,7 +2047,7 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
       <section id="data-models" style={sectionSpacing}>
         <SectionHeader label="Schema" title="Data Models" description="Vehicle model, MongoDB collections, and Atlas Search indexes" />
 
-        <motion.div {...fadeUp}>
+        <motion.div {...scaleIn}>
           <MermaidViewer title="Vehicle Model Structure" tabs={[{ label: 'Class Diagram', source: mermaidVehicleModel }]} />
         </motion.div>
 
@@ -2005,39 +2081,45 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
 
         <motion.div {...fadeUp} style={spacer}>
           <h3 style={subHeading}>Key Enums</h3>
-          <div style={cardGrid3}>
-            <div style={enumCard}>
+          <motion.div
+            style={cardGrid3}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.1 }}
+          >
+            <motion.div style={enumCard} variants={staggerItem} {...enumCardHover}>
               <div style={{ ...enumTitle, color: c.accent }}>InventoryStatus</div>
               <ul style={enumList}>
                 <li>ACTIVE</li>
                 <li>DELETED</li>
                 <li>SUPPRESSED</li>
               </ul>
-            </div>
-            <div style={enumCard}>
+            </motion.div>
+            <motion.div style={enumCard} variants={staggerItem} {...enumCardHover}>
               <div style={{ ...enumTitle, color: c.accent2 }}>VehicleCondition</div>
               <ul style={enumList}>
                 <li>NEW</li>
                 <li>USED</li>
                 <li>CERTIFIED</li>
               </ul>
-            </div>
-            <div style={enumCard}>
+            </motion.div>
+            <motion.div style={enumCard} variants={staggerItem} {...enumCardHover}>
               <div style={{ ...enumTitle, color: c.accent3 }}>DeltaType</div>
               <ul style={enumList}>
                 <li>ADD</li>
                 <li>UPDATE</li>
                 <li>DELETE</li>
               </ul>
-            </div>
-            <div style={enumCard}>
+            </motion.div>
+            <motion.div style={enumCard} variants={staggerItem} {...enumCardHover}>
               <div style={{ ...enumTitle, color: c.orange }}>MessageType</div>
               <ul style={enumList}>
                 <li>LEASING</li>
                 <li>INCENTIVE</li>
               </ul>
-            </div>
-            <div style={enumCard}>
+            </motion.div>
+            <motion.div style={enumCard} variants={staggerItem} {...enumCardHover}>
               <div style={{ ...enumTitle, color: c.pink }}>SortField</div>
               <ul style={enumList}>
                 <li>RELEVANCE</li>
@@ -2047,8 +2129,8 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
                 <li>YEAR_DESC</li>
                 <li>DISTANCE</li>
               </ul>
-            </div>
-            <div style={enumCard}>
+            </motion.div>
+            <motion.div style={enumCard} variants={staggerItem} {...enumCardHover}>
               <div style={{ ...enumTitle, color: c.cyan }}>BodyStyle</div>
               <ul style={enumList}>
                 <li>SEDAN</li>
@@ -2060,8 +2142,8 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
                 <li>WAGON</li>
                 <li>HATCHBACK</li>
               </ul>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -2082,7 +2164,7 @@ verify { messageSender.publishBatch("inventory-delta-topic", any(), 100) }`} />
           />
         </motion.div>
 
-        <motion.div {...fadeUp} style={spacer}>
+        <motion.div {...scaleIn} style={spacer}>
           <MermaidViewer title="CI/CD Pipeline" tabs={[{ label: 'Pipeline', source: mermaidCiCd }]} />
         </motion.div>
 
@@ -2121,22 +2203,28 @@ ENTRYPOINT ["java", "-jar", "app.jar"]`} />
 
         <motion.div {...fadeUp} style={spacer}>
           <h3 style={subHeading}>Infrastructure as Code</h3>
-          <div style={cardGrid}>
-            <div style={infoCard}>
+          <motion.div
+            style={cardGrid}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+          >
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent }}>Terraform</div>
               <div style={infoCardText}>
                 Manages MongoDB Atlas indexes, Azure Service Bus topics/subscriptions,
                 and Azure Blob Storage containers. State is stored in Azure Storage backend.
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent2 }}>Helm Charts</div>
               <div style={infoCardText}>
                 Each service has a Helm chart defining deployments, services, configmaps,
                 and HPA (Horizontal Pod Autoscaler) rules. Values vary per environment.
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -2144,56 +2232,68 @@ ENTRYPOINT ["java", "-jar", "app.jar"]`} />
       <section id="ext-integrations" style={sectionSpacing}>
         <SectionHeader label="Integrations" title="External Integrations" description="Third-party APIs and internal Lithia services" />
 
-        <motion.div {...fadeUp}>
+        <motion.div {...scaleIn}>
           <MermaidViewer title="External Integration Map" tabs={[{ label: 'Integration Map', source: mermaidExtIntegrations }]} />
         </motion.div>
 
         <motion.div {...fadeUp} style={spacer}>
           <h3 style={subHeading}>Internal Lithia Services</h3>
-          <div style={cardGrid3}>
-            <div style={infoCard}>
+          <motion.div
+            style={cardGrid3}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+          >
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent }}>Libra API</div>
               <div style={infoCardText}>
                 Provides dealership information including name, address, phone, and zone assignments.
                 Called by cron to keep dealer data current.
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent2 }}>Incentives API</div>
               <div style={infoCardText}>
                 Provides OEM region mappings (postal code to region ID). Used to determine which
                 lease pricing applies to which geographic areas.
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.orange }}>Tax & Fee API</div>
               <div style={infoCardText}>
                 Calculates shipping costs and tax estimates based on vehicle location and destination.
                 Called on-demand for VDP price breakdowns.
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
 
         <motion.div {...fadeUp} style={spacer}>
           <h3 style={subHeading}>Third-Party Services</h3>
-          <div style={cardGrid}>
-            <div style={infoCard}>
+          <motion.div
+            style={cardGrid}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+          >
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.accent3 }}>MaxDigital</div>
               <div style={infoCardText}>
                 Vehicle photo provider. Called via GraphQL to fetch gallery images for VDP pages.
                 Returns 6 different image sizes per photo (thumbnail, small, medium, large, xlarge, original).
                 Responses are cached with a 1-hour TTL.
               </div>
-            </div>
-            <div style={infoCard}>
+            </motion.div>
+            <motion.div style={infoCard} variants={staggerItem} {...cardHover}>
               <div style={{ ...infoCardTitle, color: c.pink }}>Impel / SpinCar</div>
               <div style={infoCardText}>
                 Provides 360-degree vehicle spin URLs. The spin URL is stored on the Vehicle.image.spinUrl field.
                 A cron job periodically counts how many vehicles have spins for monitoring dashboards.
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
       </section>
 

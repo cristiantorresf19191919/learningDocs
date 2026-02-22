@@ -18,7 +18,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ title, subtitle, badges }) => {
     width: '100%',
     position: 'relative',
     overflow: 'hidden',
-    padding: '80px 24px 64px',
+    padding: 'clamp(3rem, 8vw, 80px) clamp(1rem, 4vw, 24px) clamp(2.5rem, 6vw, 64px)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -42,7 +42,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ title, subtitle, badges }) => {
 
   const titleStyle: React.CSSProperties = {
     margin: 0,
-    fontSize: '44px',
+    fontSize: 'clamp(1.75rem, 5vw, 2.75rem)',
     fontWeight: 800,
     color: '#e2e8f0',
     lineHeight: 1.15,
@@ -53,7 +53,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ title, subtitle, badges }) => {
   const subtitleStyle: React.CSSProperties = {
     marginTop: '20px',
     marginBottom: 0,
-    fontSize: '18px',
+    fontSize: 'clamp(0.9rem, 2.5vw, 1.125rem)',
     lineHeight: 1.7,
     color: '#94a3b8',
     maxWidth: '640px',

@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { useSidebar } from '../context/SidebarContext';
@@ -8,17 +8,7 @@ import Callout from '../components/shared/Callout';
 import Card from '../components/shared/Card';
 import Badge from '../components/shared/Badge';
 import Tabs from '../components/shared/Tabs';
-
-/* ------------------------------------------------------------------ */
-/*  Responsive hook                                                    */
-/* ------------------------------------------------------------------ */
-function useWindowWidth() {
-  const subscribe = useCallback((cb: () => void) => {
-    window.addEventListener('resize', cb);
-    return () => window.removeEventListener('resize', cb);
-  }, []);
-  return useSyncExternalStore(subscribe, () => window.innerWidth);
-}
+import { useWindowWidth } from '../hooks/useWindowWidth';
 
 /* ------------------------------------------------------------------ */
 /*  Design tokens                                                      */

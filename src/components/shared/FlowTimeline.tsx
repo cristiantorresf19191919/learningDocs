@@ -32,10 +32,10 @@ const FlowTimeline: React.FC<FlowTimelineProps> = ({ steps }) => {
 
         const rowStyle: React.CSSProperties = {
           display: 'flex',
-          gap: '24px',
+          gap: 'clamp(12px, 3vw, 24px)',
           position: 'relative',
-          minHeight: '120px',
-          paddingBottom: isLast ? 0 : '32px',
+          minHeight: '80px',
+          paddingBottom: isLast ? 0 : 'clamp(16px, 3vw, 32px)',
         };
 
         const markerColumnStyle: React.CSSProperties = {
@@ -43,20 +43,20 @@ const FlowTimeline: React.FC<FlowTimelineProps> = ({ steps }) => {
           flexDirection: 'column',
           alignItems: 'center',
           flexShrink: 0,
-          width: '48px',
+          width: 'clamp(32px, 6vw, 48px)',
           position: 'relative',
         };
 
         const markerStyle: React.CSSProperties = {
-          width: '40px',
-          height: '40px',
+          width: 'clamp(28px, 5vw, 40px)',
+          height: 'clamp(28px, 5vw, 40px)',
           borderRadius: '50%',
           backgroundColor: `${step.color}18`,
           border: `2px solid ${step.color}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '14px',
+          fontSize: 'clamp(11px, 2vw, 14px)',
           fontWeight: 700,
           color: step.color,
           flexShrink: 0,
@@ -75,10 +75,11 @@ const FlowTimeline: React.FC<FlowTimelineProps> = ({ steps }) => {
 
         const cardStyle: React.CSSProperties = {
           flex: 1,
+          minWidth: 0,
           backgroundColor: '#111827',
           border: '1px solid #2a3a52',
-          borderRadius: '12px',
-          padding: '20px 24px',
+          borderRadius: 'clamp(8px, 2vw, 12px)',
+          padding: 'clamp(12px, 2.5vw, 20px) clamp(12px, 3vw, 24px)',
           borderLeft: `3px solid ${step.color}`,
         };
 

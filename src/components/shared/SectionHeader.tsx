@@ -15,7 +15,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
 }) => {
   const containerStyle: React.CSSProperties = {
     textAlign: 'center',
-    marginBottom: '48px',
+    marginBottom: 'clamp(1.5rem, 4vw, 3rem)',
     maxWidth: '720px',
     marginLeft: 'auto',
     marginRight: 'auto',
@@ -46,7 +46,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
 
   const titleStyle: React.CSSProperties = {
     margin: 0,
-    fontSize: '32px',
+    fontSize: 'clamp(1.35rem, 4vw, 2rem)',
     fontWeight: 800,
     color: '#e2e8f0',
     lineHeight: 1.2,

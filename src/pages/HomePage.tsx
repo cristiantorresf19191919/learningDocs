@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 
 /* ------------------------------------------------------------------ */
 /*  Design tokens                                                      */
@@ -361,7 +361,7 @@ const pageWrapper: CSSProperties = {
 const heroSection: CSSProperties = {
   position: 'relative',
   textAlign: 'center',
-  padding: '4rem 0 3.5rem',
+  padding: 'clamp(2rem, 5vw, 4rem) 0 clamp(2rem, 4vw, 3.5rem)',
   overflow: 'hidden',
 };
 
@@ -384,7 +384,7 @@ const heroContent: CSSProperties = {
 };
 
 const heroTitle: CSSProperties = {
-  fontSize: '3.2rem',
+  fontSize: 'clamp(1.75rem, 5vw, 3.2rem)',
   fontWeight: 800,
   lineHeight: 1.15,
   margin: '0 0 1.25rem',
@@ -396,11 +396,50 @@ const heroTitle: CSSProperties = {
 };
 
 const heroSubtitle: CSSProperties = {
-  fontSize: '1.1rem',
+  fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
   color: c.text2,
   maxWidth: 580,
   margin: '0 auto 2rem',
   lineHeight: 1.75,
+  padding: '0 0.5rem',
+};
+
+const heroSearchWrapper: CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  marginBottom: '0.5rem',
+};
+
+const heroSearchBtn: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  width: 'min(100%, 420px)',
+  padding: '0.75rem 1.1rem',
+  borderRadius: 12,
+  border: '1px solid #2a3a52',
+  background: 'rgba(17, 24, 39, 0.7)',
+  backdropFilter: 'blur(8px)',
+  color: '#64748b',
+  fontSize: '0.9rem',
+  cursor: 'pointer',
+  textAlign: 'left',
+  transition: 'all 0.25s ease',
+};
+
+const heroSearchKbd: CSSProperties = {
+  marginLeft: 'auto',
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '2px 8px',
+  borderRadius: 6,
+  border: '1px solid #2a3a52',
+  background: '#1a2332',
+  color: '#4a5568',
+  fontSize: '0.72rem',
+  fontWeight: 600,
+  fontFamily: 'inherit',
+  letterSpacing: '0.04em',
 };
 
 const badgeRow: CSSProperties = {
@@ -435,8 +474,8 @@ const dot = (color: string): CSSProperties => ({
 /* --- Stats --- */
 const statsRow: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '1rem',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+  gap: '0.75rem',
   margin: '0 0 3rem',
 };
 
@@ -450,7 +489,7 @@ const makeStatCard = (_accentColor: string): CSSProperties => ({
 });
 
 const makeStatValue = (accentColor: string): CSSProperties => ({
-  fontSize: '2.4rem',
+  fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
   fontWeight: 800,
   lineHeight: 1,
   marginBottom: '0.35rem',
@@ -469,8 +508,8 @@ const statLabel: CSSProperties = {
 /* --- Nav cards --- */
 const navGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '1.25rem',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+  gap: '1rem',
   marginBottom: '3rem',
 };
 
@@ -518,17 +557,33 @@ const navCardDesc: CSSProperties = {
 const makeArrowPill = (accentColor: string): CSSProperties => ({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.3rem',
+  gap: '0.4rem',
   marginTop: '1.1rem',
   fontSize: '0.82rem',
   fontWeight: 600,
   color: accentColor,
+  padding: '0.35rem 0.9rem',
+  borderRadius: 999,
+  border: `1px solid ${accentColor}30`,
+  background: `${accentColor}08`,
 });
+
+const arrowPillMotion = {
+  initial: { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0 },
+  whileInView: { opacity: 1, width: 'auto', paddingLeft: '0.9rem', paddingRight: '0.9rem' },
+  viewport: { once: true, amount: 0.3 },
+  transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 },
+} as const;
+
+const arrowPillHover = {
+  background: 'rgba(255,255,255,0.04)',
+  transition: { duration: 0.2 },
+} as const;
 
 /* --- Feature highlights --- */
 const featureGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
   gap: '1rem',
 };
 
@@ -576,6 +631,18 @@ const sectionHeading: CSSProperties = {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 export default function HomePage() {
+  const [, setSearchFocused] = useState(false);
+
+  const handleSearchClick = () => {
+    // Trigger the global Cmd+K shortcut
+    window.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'k',
+      metaKey: true,
+      ctrlKey: true,
+      bubbles: true,
+    }));
+  };
+
   return (
     <div style={pageWrapper}>
       {/* ---- Hero Section ---- */}
@@ -591,7 +658,31 @@ export default function HomePage() {
             Interactive architecture documentation for the Driveway F&amp;I platform.
             Explore system flows, pricing logic, and service integrations.
           </p>
-          <div style={badgeRow}>
+
+          {/* Search bar */}
+          <motion.div
+            style={heroSearchWrapper}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
+          >
+            <button
+              style={heroSearchBtn}
+              onClick={handleSearchClick}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span style={{ color: c.text2 }}>Search pages, services, topics...</span>
+              <kbd style={heroSearchKbd}>{'\u2318'}K</kbd>
+            </button>
+          </motion.div>
+
+          <div style={{ ...badgeRow, marginTop: '1.5rem' }}>
             {badges.map((b) => (
               <span key={b.label} style={makeBadge(b.color)}>
                 <span style={dot(b.color)} />
@@ -648,9 +739,13 @@ export default function HomePage() {
                 <div style={makeIconWrap(card.color)}>{card.icon}</div>
                 <div style={navCardTitle}>{card.title}</div>
                 <div style={navCardDesc}>{card.description}</div>
-                <div style={makeArrowPill(card.color)}>
+                <motion.div
+                  style={makeArrowPill(card.color)}
+                  {...arrowPillMotion}
+                  whileHover={arrowPillHover}
+                >
                   Explore
-                  <svg
+                  <motion.svg
                     width="14"
                     height="14"
                     viewBox="0 0 24 24"
@@ -659,11 +754,14 @@ export default function HomePage() {
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    initial={false}
+                    whileHover={{ x: 3 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <path d="M5 12h14" />
                     <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </div>
+                  </motion.svg>
+                </motion.div>
               </Link>
             </motion.div>
           ))}
@@ -698,9 +796,13 @@ export default function HomePage() {
                 <div style={makeIconWrap(card.color)}>{card.icon}</div>
                 <div style={navCardTitle}>{card.title}</div>
                 <div style={navCardDesc}>{card.description}</div>
-                <div style={makeArrowPill(card.color)}>
+                <motion.div
+                  style={makeArrowPill(card.color)}
+                  {...arrowPillMotion}
+                  whileHover={arrowPillHover}
+                >
                   Explore
-                  <svg
+                  <motion.svg
                     width="14"
                     height="14"
                     viewBox="0 0 24 24"
@@ -709,11 +811,14 @@ export default function HomePage() {
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    initial={false}
+                    whileHover={{ x: 3 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <path d="M5 12h14" />
                     <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </div>
+                  </motion.svg>
+                </motion.div>
               </Link>
             </motion.div>
           ))}

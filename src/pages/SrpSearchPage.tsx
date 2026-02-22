@@ -216,14 +216,14 @@ const section: CSSProperties = { marginTop: '4rem' };
 
 const gridTwo: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
   gap: '1.25rem',
   marginTop: '1.5rem',
 };
 
 const gridThree: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
   gap: '1.25rem',
   marginTop: '1.5rem',
 };

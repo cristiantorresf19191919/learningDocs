@@ -200,7 +200,7 @@ const heroGlow: CSSProperties = {
 };
 
 const heroTitle: CSSProperties = {
-  fontSize: '2.8rem',
+  fontSize: 'clamp(1.75rem, 5vw, 2.8rem)',
   fontWeight: 800,
   lineHeight: 1.15,
   margin: '0 0 1rem',
