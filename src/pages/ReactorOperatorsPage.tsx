@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { useSidebar } from '../context/SidebarContext';
@@ -8,6 +8,17 @@ import Callout from '../components/shared/Callout';
 import Card from '../components/shared/Card';
 import Badge from '../components/shared/Badge';
 import Tabs from '../components/shared/Tabs';
+
+/* ------------------------------------------------------------------ */
+/*  Responsive hook                                                    */
+/* ------------------------------------------------------------------ */
+function useWindowWidth() {
+  const subscribe = useCallback((cb: () => void) => {
+    window.addEventListener('resize', cb);
+    return () => window.removeEventListener('resize', cb);
+  }, []);
+  return useSyncExternalStore(subscribe, () => window.innerWidth);
+}
 
 /* ------------------------------------------------------------------ */
 /*  Design tokens                                                      */
@@ -52,18 +63,6 @@ const page: CSSProperties = {
 
 const section: CSSProperties = { marginBottom: '4rem' };
 
-const grid2: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '1rem',
-};
-
-const grid3: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '1rem',
-};
-
 const prose: CSSProperties = {
   fontSize: '0.9rem',
   lineHeight: 1.8,
@@ -83,20 +82,21 @@ const operatorBadge = (color: string): CSSProperties => ({
   marginRight: 6,
 });
 
-const marbleDiagram: CSSProperties = {
+const makeMarbleDiagram = (mobile: boolean): CSSProperties => ({
   background: c.surface,
   border: `1px solid ${c.border}`,
   borderRadius: 12,
-  padding: '1rem 1.25rem',
+  padding: mobile ? '0.75rem' : '1rem 1.25rem',
   fontFamily: "'SF Mono', 'Fira Code', monospace",
-  fontSize: '0.82rem',
+  fontSize: mobile ? '0.7rem' : '0.82rem',
   lineHeight: 1.8,
   color: c.text2,
   whiteSpace: 'pre',
   overflowX: 'auto',
+  WebkitOverflowScrolling: 'touch' as CSSProperties['WebkitOverflowScrolling'],
   marginTop: '0.75rem',
   marginBottom: '0.75rem',
-};
+});
 
 /* ------------------------------------------------------------------ */
 /*  Operator category data                                             */
@@ -211,6 +211,21 @@ function CategoryFilter({
 export default function ReactorOperatorsPage() {
   const { setSidebar, clearSidebar } = useSidebar();
   const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
+  const width = useWindowWidth();
+  const mobile = width < 768;
+  const tablet = width < 1024;
+
+  const grid2: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: mobile ? '1fr' : 'repeat(2, 1fr)',
+    gap: '1rem',
+  };
+  const grid3: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: mobile ? '1fr' : tablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+    gap: '1rem',
+  };
+  const marbleDiagram = makeMarbleDiagram(mobile);
 
   useEffect(() => {
     setSidebar('Reactor Operators', sidebarSections);
@@ -230,6 +245,15 @@ export default function ReactorOperatorsPage() {
 
   return (
     <div style={page}>
+      {/* Responsive overrides injected via style tag for things inline styles can't cover */}
+      <style>{`
+        @media (max-width: 767px) {
+          .reactor-page h2 { font-size: 1.5rem !important; }
+          .reactor-page pre { font-size: 0.72rem !important; }
+          .reactor-page code { font-size: 0.78rem !important; word-break: break-word; }
+        }
+      `}</style>
+      <div className="reactor-page">
       {/* ============================================================ */}
       {/*  HERO / OVERVIEW                                              */}
       {/* ============================================================ */}
@@ -1658,6 +1682,7 @@ fun deleteVehicle(vin: String): Mono<Void> {
           </Card>
         </div>
       </motion.section>
+      </div>
     </div>
   );
 }
