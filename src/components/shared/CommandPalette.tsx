@@ -168,6 +168,30 @@ const searchIndex: SearchItem[] = [
     keywords: ['reactor', 'operators', 'mono', 'flux', 'reactive', 'patterns', 'webflux'],
     icon: '\u269B',
   },
+  {
+    title: 'Odyssey Documentation',
+    to: '/odyssey-documentation',
+    description: 'Complete Odyssey API architecture, modules, APIs, deployment',
+    category: 'Odyssey',
+    keywords: ['odyssey', 'documentation', 'architecture', 'modules', 'api', 'deployment', 'overview'],
+    icon: '\u2139',
+  },
+  {
+    title: 'Odyssey Search Query Logic',
+    to: '/odyssey-search-query-logic',
+    description: 'Search pipeline from GraphQL to MongoDB Atlas Search',
+    category: 'Odyssey',
+    keywords: ['search', 'query', 'logic', 'graphql', 'atlas', 'mongodb', 'pipeline', 'filter', 'scoring'],
+    icon: '\u2315',
+  },
+  {
+    title: 'Odyssey Technical Guide',
+    to: '/odyssey-technical-guide',
+    description: 'Technical deep dive: Reactor, cron, Azure, MongoDB, testing',
+    category: 'Odyssey',
+    keywords: ['technical', 'guide', 'reactor', 'cron', 'azure', 'mongodb', 'testing', 'mermaid'],
+    icon: '\u2609',
+  },
 ];
 
 /* ------------------------------------------------------------------ */

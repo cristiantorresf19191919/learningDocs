@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odyssey Search Query Logic &mdash; Deep Dive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #161822;
+            --surface2: #1c1f2e;
+            --border: #2a2d3e;
+            --text: #e0e0e6;
+            --text-muted: #8b8fa3;
+            --accent: #6c9eff;
+            --accent2: #a78bfa;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --red: #f87171;
+            --yellow: #facc15;
+            --cyan: #22d3ee;
+            --pink: #f472b6;
+            --radius: 12px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+        body {
+            font-family: var(--font-sans);
+            font-size: 1.0625rem;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+            scroll-behavior: smooth;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        /* ── HEADER ── */
+        .hero {
+            background: linear-gradient(135deg, #1a1d2e 0%, #0f1117 50%, #1a152e 100%);
+            border-bottom: 1px solid var(--border);
+            padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2rem) clamp(2rem, 5vw, 3rem);
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: clamp(1.75rem, 5vw, 2.6rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: .5rem;
+        }
+        .hero p { color: var(--text-muted); font-size: clamp(0.95rem, 2vw, 1.1rem); max-width: 640px; margin: 0 auto; line-height: 1.6; }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: .75rem;
+            font-weight: 600;
+            margin: .25rem;
+        }
+        .badge-blue   { background: rgba(108,158,255,.15); color: var(--accent); }
+        .badge-purple { background: rgba(167,139,250,.15); color: var(--accent2); }
+        .badge-green  { background: rgba(74,222,128,.15); color: var(--green); }
+        .badge-orange { background: rgba(251,146,60,.15); color: var(--orange); }
+
+        /* ── LAYOUT ── */
+        .container { max-width: 1100px; margin: 0 auto; padding: clamp(1.25rem, 4vw, 2rem) clamp(1.25rem, 4vw, 2.5rem); }
+
+        /* ── TABLE OF CONTENTS ── */
+        .toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: 3rem;
+        }
+        .toc h2 { font-size: 1.15rem; margin-bottom: 1rem; color: var(--accent); font-weight: 700; }
+        .toc ol { padding-left: 1.5rem; }
+        .toc li { margin-bottom: .5rem; }
+        .toc li a { color: var(--text-muted); font-size: .95rem; transition: color 0.2s; }
+        .toc li a:hover { color: var(--accent); }
+
+        /* ── SECTIONS ── */
+        .section {
+            margin-bottom: 3.5rem;
+            scroll-margin-top: 2rem;
+        }
+        .section h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-bottom: .5rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+        .section h2 .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .step-blue   { background: rgba(108,158,255,.2); color: var(--accent); }
+        .step-purple { background: rgba(167,139,250,.2); color: var(--accent2); }
+        .step-green  { background: rgba(74,222,128,.2); color: var(--green); }
+        .step-orange { background: rgba(251,146,60,.2); color: var(--orange); }
+        .step-pink   { background: rgba(244,114,182,.2); color: var(--pink); }
+        .step-cyan   { background: rgba(34,211,238,.2); color: var(--cyan); }
+        .step-yellow { background: rgba(250,204,21,.2); color: var(--yellow); }
+        .step-red    { background: rgba(248,113,113,.2); color: var(--red); }
+
+        .section h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin: 1.5rem 0 .75rem;
+            color: var(--accent2);
+        }
+        .section p, .section li { color: var(--text); font-size: .95rem; }
+        .section ul, .section ol { padding-left: 1.5rem; margin: .75rem 0; }
+        .section li { margin-bottom: .3rem; }
+
+        /* ── CALLOUT BOXES ── */
+        .callout {
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+            font-size: .9rem;
+            line-height: 1.6;
+        }
+        .callout-info { background: rgba(108,158,255,.08); border-left: 3px solid var(--accent); }
+        .callout-warn { background: rgba(251,146,60,.08); border-left: 3px solid var(--orange); }
+        .callout-tip  { background: rgba(74,222,128,.08); border-left: 3px solid var(--green); }
+        .callout strong { display: block; margin-bottom: .25rem; }
+
+        /* ── CODE BLOCKS ── */
+        pre {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: .82rem;
+            line-height: 1.65;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+        }
+        pre code { color: #c9d1d9; }
+        :not(pre) > code {
+            background: var(--surface2);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: .85em;
+            color: var(--cyan);
+        }
+        /* syntax highlights */
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .str { color: #a5d6ff; }
+        .cm { color: #8b949e; font-style: italic; }
+        .tp { color: #79c0ff; }
+        .num { color: #ffa657; }
+        .op { color: #ff7b72; }
+        .var { color: #ffa657; }
+        .ann { color: #d2a8ff; }
+        .json-key { color: #7ee787; }
+        .json-str { color: #a5d6ff; }
+        .json-num { color: #ffa657; }
+        .json-bool { color: #ff7b72; }
+
+        /* ── DIAGRAM ── */
+        .diagram {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        .diagram pre {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: .78rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+        .diagram .hl-blue   { color: var(--accent); font-weight: 700; }
+        .diagram .hl-purple { color: var(--accent2); font-weight: 700; }
+        .diagram .hl-green  { color: var(--green); font-weight: 700; }
+        .diagram .hl-orange { color: var(--orange); font-weight: 700; }
+        .diagram .hl-cyan   { color: var(--cyan); font-weight: 700; }
+        .diagram .hl-pink   { color: var(--pink); font-weight: 700; }
+        .diagram .hl-yellow { color: var(--yellow); font-weight: 700; }
+
+        /* ── TABLES ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            min-width: 520px;
+            border-collapse: collapse;
+            font-size: .9rem;
+        }
+        th {
+            background: var(--surface2);
+            text-align: left;
+            padding: .75rem 1rem;
+            font-weight: 600;
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+        }
+        td {
+            padding: .7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        tr:hover td { background: rgba(108,158,255,.04); }
+
+        /* ── FLOW CARDS ── */
+        .flow-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .flow-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .flow-card h4 {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: .5rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .flow-card p { font-size: .88rem; color: var(--text-muted); }
+        .flow-arrow {
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--border);
+            margin: .25rem 0;
+        }
+
+        /* ── PILL ── */
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: .75rem;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+        .pill-filter   { background: rgba(108,158,255,.15); color: var(--accent); }
+        .pill-must     { background: rgba(74,222,128,.15); color: var(--green); }
+        .pill-should   { background: rgba(251,146,60,.15); color: var(--orange); }
+        .pill-mustnot  { background: rgba(248,113,113,.15); color: var(--red); }
+
+        /* ── FILE REFERENCE ── */
+        .file-ref {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .8rem;
+            color: var(--text-muted);
+            background: var(--surface2);
+            padding: 2px 8px;
+            border-radius: 5px;
+            margin: .25rem .1rem;
+        }
+        .file-ref::before { content: ""; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .section { margin-bottom: 2.5rem; }
+            .section h2 { font-size: 1.35rem; flex-wrap: wrap; }
+            .section h2 .step-num { width: 28px; height: 28px; font-size: .8rem; }
+            pre { font-size: .8rem; padding: 1rem; }
+            .diagram pre { font-size: .72rem; }
+            .callout { padding: 1rem 1.1rem; }
+        }
+        @media (max-width: 480px) {
+            .container { padding: 1rem 1.25rem; }
+            .hero .badge { display: inline-block; margin: .2rem; }
+            .toc { padding: 1.25rem; }
+            .toc ol { padding-left: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════ HERO ═══ -->
+<header class="hero">
+    <h1>Odyssey Search Query Logic</h1>
+    <p>A deep-dive into how Driveway.com's vehicle search pipeline is built, from GraphQL entry to MongoDB Atlas Search execution.</p>
+    <div style="margin-top:1rem;">
+        <span class="badge badge-blue">MongoDB Atlas Search</span>
+        <span class="badge badge-purple">Kotlin DSL</span>
+        <span class="badge badge-green">GraphQL Kotlin</span>
+        <span class="badge badge-orange">Reactive Pipelines</span>
+    </div>
+</header>
+
+<div class="container">
+
+<!-- ════════════════════════════════════════════════════ TOC ═══ -->
+<nav class="toc">
+    <h2>Table of Contents</h2>
+    <ol>
+        <li><a href="#overview">High-Level Architecture Overview</a></li>
+        <li><a href="#entry">Step 1 &mdash; GraphQL Entry Point &amp; Input Parameters</a></li>
+        <li><a href="#pipeline">Step 2 &mdash; Pipeline Construction (PipelineBuilder)</a></li>
+        <li><a href="#compound">Step 3 &mdash; The $search CompoundBlock (Heart of Search)</a></li>
+        <li><a href="#filters">Step 4 &mdash; Hard Filters (FilterBuilder)</a></li>
+        <li><a href="#text">Step 5 &mdash; Full-Text Search with Fuzzy Matching (TextBuilder)</a></li>
+        <li><a href="#scoring">Step 6 &mdash; Scoring &amp; Ranking (SearchScoreWeights)</a></li>
+        <li><a href="#templates">Step 7 &mdash; Dynamic Score Templates (Shipping &amp; Leasing)</a></li>
+        <li><a href="#postsearch">Step 8 &mdash; Post-Search Stages ($addFields, $project)</a></li>
+        <li><a href="#facets">Step 9 &mdash; Facets &amp; Counts ($searchMeta)</a></li>
+        <li><a href="#autocomplete">Step 10 &mdash; Autocomplete Suggestions</a></li>
+        <li><a href="#dsl">The Aggregation DSL &mdash; Block Reference</a></li>
+        <li><a href="#scoreapi">Managing Score Weights (REST API)</a></li>
+        <li><a href="#modify">How to Modify a Search Rule</a></li>
+        <li><a href="#files">Key File Reference</a></li>
+    </ol>
+</nav>
+
+<!-- ═══════════════════════════════════ 0. OVERVIEW ═══ -->
+<section id="overview" class="section">
+    <h2><span class="step-num step-blue">&uarr;</span> High-Level Architecture Overview</h2>
+
+    <p>Odyssey uses <strong>MongoDB Atlas Search</strong> as its search engine. There are no <code>.graphqls</code> schema files &mdash; the schema is generated from annotated Kotlin classes. Search "rules" are not configured in a rules-engine UI; instead, they are expressed through two complementary layers:</p>
+
+    <ol>
+        <li><strong>Index Mapping</strong> (Terraform/Atlas) &mdash; defines <em>which</em> fields are searchable and <em>how</em> they are analyzed (tokenized, lowercased, autocomplete, keyword, etc.). Index: <code>shopSearch</code> on <code>vehicleV3</code>, <code>shopSuggestions</code> on <code>searchSuggestion</code>.</li>
+        <li><strong>Query Logic</strong> (Kotlin code) &mdash; defines <em>what</em> operators, filters, and scoring functions are sent inside the <code>$search</code> aggregation stage at runtime.</li>
+    </ol>
+
+    <p>This document focuses on <strong>Layer 2</strong>: the query logic.</p>
+
+    <div class="diagram">
+<pre>
+  <span class="hl-blue">GraphQL Request</span>                 <span class="hl-purple">Builder Layer</span>                    <span class="hl-green">MongoDB</span>
+  ─────────────────           ──────────────────────           ─────────────
+  search(commonInputs) ──&gt;  PipelineBuilder                   vehicleV3 collection
+                              ├── SearchBuilder                  (Atlas Search index:
+                              │     └── SearchOperatorBuilder      shopSearch)
+                              │           ├── FilterBuilder
+                              │           ├── TextBuilder
+                              │           └── SearchBlockTemplateBuilder
+                              ├── PageBuilder      ($skip + $limit)
+                              ├── ShippingBuilder   ($addFields)
+                              ├── LeasingBuilder    ($addFields)
+                              └── ProjectBuilder    ($project)
+                                      │
+                                      ▼
+                              <span class="hl-orange">Pipeline&lt;Vehicle&gt;</span>
+                              [  $search,  $skip,  $limit,  $addFields,  $project  ]
+                                      │
+                                      ▼
+                              <span class="hl-green">MongoAggregationDao.runAggregation(pipeline)</span>
+                                      │
+                                      ▼
+                              <span class="hl-cyan">Ranked Vehicle Results</span>
+</pre>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════ 1. ENTRY ═══ -->
+<section id="entry" class="section">
+    <h2><span class="step-num step-blue">1</span> GraphQL Entry Point &amp; Input Parameters</h2>
+
+    <p>All search traffic enters through <code>SearchPageQueries.search()</code>:</p>
+    <span class="file-ref">search/.../queries/SearchPageQueries.kt</span>
+
+<pre><code><span class="ann">@GraphQLDescription</span>(<span class="str">"Search Driveway.com searchable vehicles"</span>)
+<span class="kw">suspend fun</span> <span class="fn">search</span>(
+    environment: <span class="tp">DataFetchingEnvironment</span>,
+    commonInputs: <span class="tp">VehicleCommonInputs</span>? = <span class="kw">null</span>
+): <span class="tp">VehicleResults</span> {
+    commonInputs?.<span class="fn">validate</span>()  <span class="cm">// Input validation (pagination bounds, illegal chars, etc.)</span>
+
+    <span class="kw">val</span> overrideScoreWeight = context.<span class="fn">getOverrideScoreWeightVersion</span>()
+    <span class="kw">val</span> aggregationDao = daoRouter.<span class="fn">getDaoByCollectionName</span>(...)
+
+    <span class="kw">val</span> (vehicles, count) = coroutineScope {
+        <span class="kw">val</span> deferredVehicles = async {
+            aggregationDao.<span class="fn">runAggregation</span>(
+                pipelineBuilder.<span class="fn">buildVehicleSearchPipeline</span>(commonInputs, environment, overrideScoreWeight)
+            )
+        }
+        <span class="kw">val</span> deferredCount = async {
+            <span class="cm">// Count pipeline only runs if GraphQL query requested totalItems</span>
+            pipelineBuilder.<span class="fn">buildVehicleSearchCountPipeline</span>(commonInputs, environment, overrideScoreWeight)
+        }
+        deferredVehicles.<span class="fn">await</span>() <span class="kw">to</span> deferredCount.<span class="fn">await</span>()
+    }
+    <span class="cm">// ... map to VehicleResults</span>
+}</code></pre>
+
+    <h3>VehicleCommonInputs &mdash; What the Frontend Sends</h3>
+    <span class="file-ref">graphql-shared/.../models/VehicleCommonInputs.kt</span>
+
+    <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>searchTerm</code></td><td><code>String?</code></td><td>Free-text query (e.g. "Honda Civic red")</td></tr>
+            <tr><td><code>sortCriteria</code></td><td><code>SortCriteria?</code></td><td>RELEVANCE, PRICE_LOWEST, PRICE_HIGHEST, SHIPPING_FEE_LOWEST, LEASING_LOWEST, MILEAGE_LOWEST, YEAR_NEWEST, YEAR_OLDEST, INVENTORY_NEWEST</td></tr>
+            <tr><td><code>filterInput</code></td><td><code>Filters?</code></td><td>Structured filters (see table below)</td></tr>
+            <tr><td><code>paginationInput</code></td><td><code>PaginationInput?</code></td><td><code>skip</code> (default 0, max 9900) &amp; <code>items</code> (default 24, max 500)</td></tr>
+            <tr><td><code>userLocation</code></td><td><code>UserLocation?</code></td><td><code>state</code> + <code>postalCode</code> (needed for shipping &amp; leasing)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Available Filters</h3>
+    <table>
+        <thead><tr><th>Filter</th><th>Type</th><th>Vehicle Path</th><th>Atlas Operator</th></tr></thead>
+        <tbody>
+            <tr><td><code>vehicleConditions</code></td><td><code>List&lt;VehicleCondition&gt;</code></td><td><code>vehicleCondition</code></td><td>QueryStringBlock</td></tr>
+            <tr><td><code>makeModelTrims</code></td><td><code>List&lt;MakeModelTrimFilter&gt;</code></td><td><code>ymmt.make / model / trim</code></td><td>CompoundBlock + TextBlock(keyword)</td></tr>
+            <tr><td><code>priceRange</code></td><td><code>DoubleRange</code></td><td><code>price</code></td><td>RangeBlock (gte/lte)</td></tr>
+            <tr><td><code>mileageRange</code></td><td><code>IntRange</code></td><td><code>mileage</code></td><td>RangeBlock</td></tr>
+            <tr><td><code>yearRange</code></td><td><code>IntRange</code></td><td><code>ymmt.year</code></td><td>RangeBlock</td></tr>
+            <tr><td><code>mpgHwyRange</code></td><td><code>IntRange</code></td><td><code>mpg.highway</code></td><td>RangeBlock</td></tr>
+            <tr><td><code>leaseRange</code></td><td><code>IntRange</code></td><td><code>leasing.regionalPrices.amountInCents</code></td><td>EmbeddedDocument + IntRangeBlock</td></tr>
+            <tr><td><code>exteriorColors</code></td><td><code>List&lt;String&gt;</code></td><td><code>exteriorColor.name</code></td><td rowspan="7">Combined into single QueryStringBlock with AND/OR logic</td></tr>
+            <tr><td><code>interiorColors</code></td><td><code>List&lt;String&gt;</code></td><td><code>interiorColor.name</code></td></tr>
+            <tr><td><code>bodyStyles</code></td><td><code>List&lt;String&gt;</code></td><td><code>bodyStyle</code></td></tr>
+            <tr><td><code>fuelTypes</code></td><td><code>List&lt;String&gt;</code></td><td><code>fuel</code></td></tr>
+            <tr><td><code>driveTypes</code></td><td><code>List&lt;String&gt;</code></td><td><code>driveType</code></td></tr>
+            <tr><td><code>transmissions</code></td><td><code>List&lt;String&gt;</code></td><td><code>transmission</code></td></tr>
+            <tr><td><code>engines</code></td><td><code>List&lt;String&gt;</code></td><td><code>engine</code></td></tr>
+            <tr><td><code>leasableOnly</code></td><td><code>Boolean</code></td><td><code>leasing.regionalPrices</code></td><td>EmbeddedDocument + CompoundBlock</td></tr>
+            <tr><td><code>freeShipping</code></td><td><code>Boolean</code></td><td><code>dealer.zoneZips</code></td><td>QueryStringBlock</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ═══════════════════════════════════ 2. PIPELINE ═══ -->
+<section id="pipeline" class="section">
+    <h2><span class="step-num step-purple">2</span> Pipeline Construction (PipelineBuilder)</h2>
+    <span class="file-ref">search/.../builder/PipelineBuilder.kt</span>
+
+    <p>The <code>PipelineBuilder</code> orchestrates all builders to create a <code>Pipeline&lt;Vehicle&gt;</code> &mdash; a type-safe list of MongoDB aggregation stages:</p>
+
+<pre><code><span class="kw">suspend fun</span> <span class="fn">buildVehicleSearchPipeline</span>(
+    commonInputs: <span class="tp">VehicleCommonInputs</span>?,
+    environment: <span class="tp">DataFetchingEnvironment</span>?,
+    scoreWeightVersionOverride: <span class="tp">Int</span>? = <span class="kw">null</span>
+): <span class="tp">Pipeline&lt;Vehicle&gt;</span> =
+    buildVehiclePipeline(
+        pipeline = <span class="tp">Pipeline</span>&lt;<span class="tp">Vehicle</span>&gt;(
+            searchBuilder.<span class="fn">buildSearchBlock</span>(commonInputs, scoreWeightVersionOverride)  <span class="cm">// $search</span>
+        ).<span class="fn">addStages</span>(pageBuilder.<span class="fn">buildPageBlocks</span>(commonInputs?.paginationInput)),   <span class="cm">// $skip + $limit</span>
+        projectProvider = projectBuilder::<span class="fn">buildVehicleSearchProjectBlock</span>,
+        environment = environment,
+        commonInputs = commonInputs
+    )</code></pre>
+
+    <p>Inside <code>buildVehiclePipeline()</code>, optional stages are conditionally added:</p>
+
+<pre><code><span class="kw">internal suspend fun</span> <span class="fn">buildVehiclePipeline</span>(...): <span class="tp">Pipeline&lt;Vehicle&gt;</span> {
+    <span class="kw">if</span> (environment != <span class="kw">null</span>) {
+        <span class="kw">val</span> project = projectProvider(environment)
+
+        <span class="cm">// Only add shipping calc if the GraphQL query requested "shippingFee"</span>
+        <span class="kw">if</span> (project.fields.<span class="fn">any</span> { it.field == Vehicle::shippingFee.<span class="fn">path</span>() }) {
+            pipeline.<span class="fn">addStage</span>(shippingBuilder.<span class="fn">buildShippingBlock</span>(userLocation))
+        }
+
+        <span class="cm">// Only add leasing projection if "leasing.defaultPrice" was requested</span>
+        <span class="kw">if</span> (project.fields.<span class="fn">any</span> { it.field == (Vehicle::leasing / Leasing::defaultPrice).<span class="fn">path</span>() }) {
+            pipeline.<span class="fn">addStages</span>(leasingBuilder.<span class="fn">buildAddFields</span>(commonInputs))
+        }
+
+        pipeline.<span class="fn">addStage</span>(project)  <span class="cm">// $project: only return requested fields</span>
+    }
+    <span class="kw">return</span> pipeline
+}</code></pre>
+
+    <h3>Final Pipeline Shape</h3>
+    <div class="diagram">
+<pre>
+[
+  { <span class="hl-blue">$search</span>: { index: "shopSearch", compound: { filter: [...], must: [...], should: [...] } } },
+  { <span class="hl-purple">$skip</span>:   0 },
+  { <span class="hl-purple">$limit</span>:  24 },
+  { <span class="hl-orange">$addFields</span>: { shippingFee: { $switch: { ... } } } },          <span class="cm">// conditional</span>
+  { <span class="hl-orange">$addFields</span>: { "leasing.regionalPrices": { $filter: ... } } },  <span class="cm">// conditional</span>
+  { <span class="hl-orange">$addFields</span>: { "leasing.defaultPrice": { $last: ... } } },      <span class="cm">// conditional</span>
+  { <span class="hl-green">$project</span>:  { vin: 1, price: 1, ymmt: 1, score: { $meta: "searchScore" }, ... } }
+]
+</pre>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════ 3. COMPOUND ═══ -->
+<section id="compound" class="section">
+    <h2><span class="step-num step-green">3</span> The $search CompoundBlock (Heart of Search)</h2>
+    <span class="file-ref">search/.../builder/SearchOperatorBuilder.kt</span>
+
+    <p>The <code>$search</code> stage uses a <strong>CompoundBlock</strong> &mdash; MongoDB Atlas Search's boolean logic operator. This single block contains ALL the search logic:</p>
+
+<pre><code><span class="kw">suspend fun</span> <span class="fn">buildCompoundBlockForInputsWithScore</span>(
+    inputs: <span class="tp">VehicleCommonInputs</span>?,
+    scoreWeightVersionOverride: <span class="tp">Int</span>? = <span class="kw">null</span>
+): <span class="tp">CompoundBlock</span> {
+    <span class="kw">val</span> filters = inputs?.filterInput
+    <span class="kw">val</span> userLocation = inputs?.userLocation
+    <span class="kw">val</span> scoreWeights = <span class="fn">getSearchScoreWeights</span>(inputs?.sortCriteria, filters, scoreWeightVersionOverride)
+    <span class="kw">val</span> textBlock = <span class="fn">buildTextBlock</span>(inputs?.searchTerm, scoreWeights)
+    <span class="kw">val</span> filterBlocks = filterBuilder.<span class="fn">buildSearchFilterBlocks</span>(filters, userLocation)
+
+    <span class="kw">return</span> <span class="tp">CompoundBlock</span>(
+        filter  = filterBlocks,                           <span class="cm">// Hard constraints, NO scoring</span>
+        must    = <span class="fn">listOfNotNull</span>(textBlock),               <span class="cm">// Text search, CONTRIBUTES to score</span>
+        should  = scoreWeights.sortFactors.staticFactors  <span class="cm">// Static score boosts</span>
+            .<span class="fn">plus</span>(scoreWeights.sortFactors.placeholders    <span class="cm">// + Dynamic template boosts</span>
+                .<span class="fn">mapNotNull</span> { request -&gt;
+                    searchBlockTemplateBuilder.<span class="fn">resolveSearchBlockFor</span>(request, userLocation, filters)
+                })
+    )
+}</code></pre>
+
+    <h3>The Four Sections of CompoundBlock</h3>
+    <table>
+        <thead><tr><th>Section</th><th>Purpose</th><th>Affects Score?</th><th>Logic</th></tr></thead>
+        <tbody>
+            <tr><td><span class="pill pill-filter">filter</span></td><td>Hard constraints &mdash; must match or document is excluded</td><td>No</td><td>AND</td></tr>
+            <tr><td><span class="pill pill-must">must</span></td><td>Required match &mdash; text search terms go here</td><td><strong>Yes</strong></td><td>AND</td></tr>
+            <tr><td><span class="pill pill-should">should</span></td><td>Optional boosting &mdash; scoring factors go here</td><td><strong>Yes</strong></td><td>OR (additive)</td></tr>
+            <tr><td><span class="pill pill-mustnot">mustNot</span></td><td>Exclusion &mdash; documents matching are removed</td><td>No</td><td>NOT</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout callout-info">
+        <strong>Key Insight</strong>
+        <code>filter</code> is where hard business rules live (active status, suppression, user-selected filters). <code>should</code> is where ranking/scoring rules live. This separation keeps filtering fast (no score computation) while still allowing flexible ranking.
+    </div>
+
+    <h3>Generated MongoDB JSON</h3>
+<pre><code>{
+  <span class="json-key">"$search"</span>: {
+    <span class="json-key">"index"</span>: <span class="json-str">"shopSearch"</span>,
+    <span class="json-key">"compound"</span>: {
+      <span class="json-key">"filter"</span>: [
+        { <span class="json-key">"queryString"</span>: { <span class="json-key">"defaultPath"</span>: <span class="json-str">"status"</span>, <span class="json-key">"query"</span>: <span class="json-str">"ACTIVE"</span> } },
+        { <span class="json-key">"equals"</span>: { <span class="json-key">"path"</span>: <span class="json-str">"manuallySuppressed"</span>, <span class="json-key">"value"</span>: <span class="json-bool">false</span> } },
+        { <span class="json-key">"queryString"</span>: { <span class="json-key">"defaultPath"</span>: <span class="json-str">"vehicleCondition"</span>, <span class="json-key">"query"</span>: <span class="json-str">"USED OR CPO"</span> } },
+        <span class="cm">// ... user-selected filters (price range, make/model, colors, etc.)</span>
+      ],
+      <span class="json-key">"must"</span>: [
+        { <span class="json-key">"compound"</span>: { <span class="json-key">"should"</span>: [<span class="cm">/* TextBlocks for each weighted field */</span>], <span class="json-key">"minimumShouldMatch"</span>: <span class="json-num">1</span> } }
+      ],
+      <span class="json-key">"should"</span>: [
+        <span class="cm">// staticFactors: pre-built scoring operators from SearchScoreWeights</span>
+        <span class="cm">// + resolved templates: FREE_SHIPPING, BASE_SHIPPING_LOWEST, LEASING_LOWEST</span>
+      ]
+    }
+  }
+}</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 4. FILTERS ═══ -->
+<section id="filters" class="section">
+    <h2><span class="step-num step-orange">4</span> Hard Filters (FilterBuilder)</h2>
+    <span class="file-ref">search/.../builder/FilterBuilder.kt</span>
+
+    <p>Filters go into <code>compound.filter</code>. They are <strong>AND</strong>-ed together &mdash; every document must match all of them. They do <strong>not</strong> affect the relevance score.</p>
+
+    <h3>4.1 &mdash; Always-Applied Base Filters</h3>
+    <p>These two filters are <em>always</em> added, regardless of user input:</p>
+<pre><code><span class="kw">private fun</span> <span class="fn">buildSearchableVehicleFilter</span>(): <span class="tp">MutableList&lt;SearchOperatorBlock&gt;</span> =
+    mutableListOf(
+        <span class="tp">QueryStringBlock</span>(path = Vehicle::status, query = <span class="str">"ACTIVE"</span>),
+        <span class="tp">EqualsBlock</span>(path = Vehicle::manuallySuppressed, value = <span class="kw">false</span>)
+    )</code></pre>
+
+    <div class="callout callout-tip">
+        <strong>Rule: Hide Soft-Deleted &amp; Suppressed Vehicles</strong>
+        Every search query automatically excludes vehicles with <code>status != ACTIVE</code> or <code>manuallySuppressed == true</code>. This is a hard-coded business rule that cannot be overridden by the frontend.
+    </div>
+
+    <h3>4.2 &mdash; Vehicle Condition Filter (Always Applied)</h3>
+<pre><code><span class="kw">private fun</span> <span class="fn">buildVehicleConditionFilter</span>(conditions: <span class="tp">List&lt;VehicleCondition&gt;</span>?): <span class="tp">QueryStringBlock</span> {
+    <span class="kw">val</span> safeConditions = <span class="kw">when</span> {
+        !conditions.<span class="fn">isNullOrEmpty</span>() -&gt; conditions
+        <span class="kw">else</span> -&gt; DEFAULT_VEHICLE_CONDITIONS  <span class="cm">// [USED, CPO]</span>
+    }
+    <span class="kw">return</span> <span class="tp">QueryStringBlock</span>(
+        path = Vehicle::vehicleCondition,
+        query = safeConditions.<span class="fn">joinToString</span>(<span class="str">" OR "</span>)  <span class="cm">// "USED OR CPO"</span>
+    )
+}
+<span class="cm">// MongoDB: { "queryString": { "defaultPath": "vehicleCondition", "query": "USED OR CPO" } }</span></code></pre>
+
+    <h3>4.3 &mdash; Make / Model / Trim Filter (Hierarchical)</h3>
+    <p>Creates a nested <code>CompoundBlock(should=[...], minimumShouldMatch=1)</code> for OR logic across make/model/trim combinations. Each leaf uses <code>TextBlock</code> with <code>analyzer = "keyword"</code> for exact matching:</p>
+<pre><code><span class="cm">// Example input: [{ make: "Toyota", models: [{ model: "Camry", trims: ["LE", "SE"] }] }]</span>
+
+<span class="tp">CompoundBlock</span>(
+    should = listOf(
+        <span class="tp">CompoundBlock</span>(filter = [
+            <span class="tp">TextBlock</span>(path = ymmt.make, query = <span class="str">"Toyota"</span>, analyzer = <span class="str">"keyword"</span>),
+            <span class="tp">TextBlock</span>(path = ymmt.model, query = <span class="str">"Camry"</span>, analyzer = <span class="str">"keyword"</span>),
+            <span class="tp">TextBlock</span>(path = ymmt.trim, query = <span class="str">"LE"</span>, analyzer = <span class="str">"keyword"</span>)
+        ]),
+        <span class="tp">CompoundBlock</span>(filter = [
+            <span class="tp">TextBlock</span>(path = ymmt.make, query = <span class="str">"Toyota"</span>, analyzer = <span class="str">"keyword"</span>),
+            <span class="tp">TextBlock</span>(path = ymmt.model, query = <span class="str">"Camry"</span>, analyzer = <span class="str">"keyword"</span>),
+            <span class="tp">TextBlock</span>(path = ymmt.trim, query = <span class="str">"SE"</span>, analyzer = <span class="str">"keyword"</span>)
+        ])
+    ),
+    minimumShouldMatch = <span class="num">1</span>  <span class="cm">// At least one must match (OR logic)</span>
+)</code></pre>
+
+    <h3>4.4 &mdash; Range Filters</h3>
+<pre><code><span class="cm">// Price: priceRange = { min: 20000, max: 50000 }</span>
+priceRange.<span class="fn">toRangeBlock</span>(Vehicle::price)
+<span class="cm">// MongoDB: { "range": { "path": "price", "gte": 20000.0, "lte": 50000.0 } }</span>
+
+<span class="cm">// Year: yearRange = { min: 2020, max: 2025 }</span>
+yearRange.<span class="fn">toRangeBlock</span>(Vehicle::ymmt / Ymmt::year)
+<span class="cm">// MongoDB: { "range": { "path": "ymmt.year", "gte": 2020, "lte": 2025 } }</span></code></pre>
+
+    <h3>4.5 &mdash; String Filters (Colors, Body Style, Fuel, etc.)</h3>
+    <p>Multiple string filters are combined into a <strong>single</strong> <code>QueryStringBlock</code> using Lucene query string syntax:</p>
+<pre><code><span class="kw">private fun</span> <span class="fn">buildStringFilters</span>(filters: <span class="tp">Filters</span>): <span class="tp">QueryStringBlock</span>? {
+    <span class="kw">val</span> queries = mutableListOf&lt;<span class="tp">String</span>&gt;()
+    <span class="cm">// exteriorColors = ["Red", "Blue"] --> "exteriorColor.name:(Red OR Blue)"</span>
+    <span class="cm">// bodyStyles = ["SUV", "Sedan"]    --> "bodyStyle:(SUV OR Sedan)"</span>
+    <span class="cm">// Combined:  "exteriorColor.name:(Red OR Blue) AND bodyStyle:(SUV OR Sedan)"</span>
+    <span class="kw">return</span> <span class="tp">QueryStringBlock</span>(path = Vehicle::vin, query = queries.<span class="fn">joinToString</span>(<span class="str">" AND "</span>))
+}
+<span class="cm">// MongoDB: { "queryString": { "defaultPath": "vin", "query": "exteriorColor.name:(Red OR Blue) AND bodyStyle:(SUV OR Sedan)" } }</span></code></pre>
+
+    <div class="callout callout-info">
+        <strong>Why <code>defaultPath: "vin"</code>?</strong>
+        The <code>defaultPath</code> for the QueryStringBlock is set to <code>vin</code> as a placeholder. The actual field paths are embedded <em>inside</em> the query string using Lucene's <code>fieldName:(value)</code> syntax, which overrides the default path.
+    </div>
+
+    <h3>4.6 &mdash; Free Shipping Filter</h3>
+<pre><code><span class="cm">// freeShipping=true with postalCode="97218"</span>
+<span class="tp">QueryStringBlock</span>(
+    query = <span class="str">"contains 97218"</span>,
+    path = Vehicle::dealer / Dealer::zoneZips
+)
+<span class="cm">// Only returns vehicles whose dealer's free-shipping zone includes this zip</span></code></pre>
+
+    <h3>4.7 &mdash; Leasable Only Filter</h3>
+    <p>This is the most complex filter. It uses the <code>PostalCodeOemRegionCache</code> to map the user's zip to OEM region IDs per make, then filters vehicles with matching regional lease prices:</p>
+<pre><code><span class="cm">// User in zip 97218 --> makeRegions = { "Honda": 101, "Toyota": 102 }</span>
+
+<span class="tp">CompoundBlock</span>(
+    should = [
+        <span class="cm">// For Honda: make=Honda AND embedded regionalPrices has regionId=101</span>
+        <span class="tp">CompoundBlock</span>(filter = [
+            <span class="tp">QueryStringBlock</span>(path = ymmt.make, query = <span class="str">"Honda"</span>),
+            <span class="tp">EmbeddedDocument</span>(
+                path = leasing.regionalPrices,
+                operator = <span class="tp">CompoundBlock</span>(filter = [
+                    <span class="tp">IntRangeBlock</span>(path = regionalPrices.regionId, value = <span class="num">101</span>),
+                    <span class="tp">IntRangeBlock</span>(path = regionalPrices.amountInCents, gte = <span class="num">20000</span>, lte = <span class="num">50000</span>)  <span class="cm">// if leaseRange set</span>
+                ])
+            )
+        ]),
+        <span class="cm">// For Toyota: same pattern with regionId=102</span>
+        ...
+    ]
+)</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 5. TEXT ═══ -->
+<section id="text" class="section">
+    <h2><span class="step-num step-cyan">5</span> Full-Text Search with Fuzzy Matching (TextBuilder)</h2>
+    <span class="file-ref">search/.../builder/TextBuilder.kt</span>
+
+    <p>When the user types a search term (e.g. "honda civic red"), the <code>TextBuilder</code> creates a <code>CompoundBlock(should=[...], minimumShouldMatch=1)</code> inside the <code>must</code> section. Each field gets its own <code>TextBlock</code> with a configurable boost weight:</p>
+
+<pre><code><span class="kw">fun</span> <span class="fn">buildSearchTermBlock</span>(query: <span class="tp">String</span>, textSearchWeights: <span class="tp">Map&lt;String, Double&gt;</span>): <span class="tp">CompoundBlock</span> =
+    <span class="tp">CompoundBlock</span>(
+        should = textSearchWeights.<span class="fn">map</span> { textSearchWeight -&gt;
+            <span class="tp">TextBlock</span>(
+                query = query,
+                path  = textSearchWeight.key,           <span class="cm">// e.g. "ymmt.make"</span>
+                fuzzyBlock = <span class="fn">buildFuzzyBlock</span>(),
+                scoreBlock = <span class="tp">BoostScoreBlock</span>(textSearchWeight.value) <span class="cm">// e.g. 2.5</span>
+            )
+        },
+        minimumShouldMatch = <span class="num">1</span>  <span class="cm">// At least one field must match</span>
+    )
+
+<span class="kw">private fun</span> <span class="fn">buildFuzzyBlock</span>() = <span class="tp">TextBlock.FuzzyBlock</span>(
+    maxEdits     = <span class="num">1</span>,   <span class="cm">// Allow 1 typo (Levenshtein distance)</span>
+    prefixLength = <span class="num">0</span>,   <span class="cm">// No prefix required to be exact</span>
+    maxExpansions = <span class="num">50</span>  <span class="cm">// Max candidate terms for fuzzy expansion</span>
+)</code></pre>
+
+    <h3>Example: textSearchWeights Config</h3>
+<pre><code><span class="cm">// Stored in searchScoreWeights collection for sortType=RECOMMENDED</span>
+{
+  <span class="json-key">"textSearchWeights"</span>: {
+    <span class="json-key">"ymmt.make"</span>:  <span class="json-num">2.5</span>,   <span class="cm">// Make matches weighted highest</span>
+    <span class="json-key">"ymmt.model"</span>: <span class="json-num">2.0</span>,
+    <span class="json-key">"ymmt.trim"</span>:  <span class="json-num">1.5</span>,
+    <span class="json-key">"bodyStyle"</span>:  <span class="json-num">1.0</span>,
+    <span class="json-key">"vin"</span>:        <span class="json-num">3.0</span>    <span class="cm">// Exact VIN match weighted very high</span>
+  }
+}</code></pre>
+
+    <h3>Generated MongoDB JSON</h3>
+<pre><code>{
+  <span class="json-key">"compound"</span>: {
+    <span class="json-key">"should"</span>: [
+      {
+        <span class="json-key">"text"</span>: {
+          <span class="json-key">"path"</span>: <span class="json-str">"ymmt.make"</span>,
+          <span class="json-key">"query"</span>: <span class="json-str">"honda civic red"</span>,
+          <span class="json-key">"fuzzy"</span>: { <span class="json-key">"maxEdits"</span>: <span class="json-num">1</span>, <span class="json-key">"prefixLength"</span>: <span class="json-num">0</span>, <span class="json-key">"maxExpansions"</span>: <span class="json-num">50</span> },
+          <span class="json-key">"score"</span>: { <span class="json-key">"boost"</span>: { <span class="json-key">"value"</span>: <span class="json-num">2.5</span> } }
+        }
+      },
+      {
+        <span class="json-key">"text"</span>: {
+          <span class="json-key">"path"</span>: <span class="json-str">"ymmt.model"</span>,
+          <span class="json-key">"query"</span>: <span class="json-str">"honda civic red"</span>,
+          <span class="json-key">"fuzzy"</span>: { <span class="json-key">"maxEdits"</span>: <span class="json-num">1</span>, <span class="json-key">"prefixLength"</span>: <span class="json-num">0</span>, <span class="json-key">"maxExpansions"</span>: <span class="json-num">50</span> },
+          <span class="json-key">"score"</span>: { <span class="json-key">"boost"</span>: { <span class="json-key">"value"</span>: <span class="json-num">2.0</span> } }
+        }
+      }
+      <span class="cm">// ... one TextBlock per field in textSearchWeights</span>
+    ],
+    <span class="json-key">"minimumShouldMatch"</span>: <span class="json-num">1</span>
+  }
+}</code></pre>
+
+    <div class="callout callout-tip">
+        <strong>Rule: Prioritize Exact VIN Matches</strong>
+        By giving VIN a high boost weight (e.g. 3.0), exact VIN matches will always score higher than partial make/model matches. This is configured through <code>textSearchWeights</code>, not code changes.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════ 6. SCORING ═══ -->
+<section id="scoring" class="section">
+    <h2><span class="step-num step-pink">6</span> Scoring &amp; Ranking (SearchScoreWeights)</h2>
+    <span class="file-ref">library/.../models/SearchScoreWeights.kt</span>
+
+    <p>This is the <strong>primary mechanism for tuning search results</strong>. Each <code>SortType</code> has a versioned configuration stored in the <code>searchScoreWeights</code> MongoDB collection:</p>
+
+<pre><code><span class="kw">data class</span> <span class="tp">SearchScoreWeights</span>(
+    <span class="kw">val</span> id: <span class="tp">ObjectId</span>? = <span class="kw">null</span>,
+    <span class="kw">val</span> version: <span class="tp">Int</span> = <span class="num">1</span>,               <span class="cm">// Auto-incremented per sortType</span>
+    <span class="kw">val</span> description: <span class="tp">String</span>? = <span class="kw">null</span>,
+    <span class="kw">val</span> enabled: <span class="tp">Boolean</span> = <span class="kw">false</span>,        <span class="cm">// Only ONE version per sortType is active</span>
+    <span class="kw">val</span> sortType: <span class="tp">SortType</span>,              <span class="cm">// Which sort context this config applies to</span>
+    <span class="kw">val</span> textSearchWeights: <span class="tp">Map&lt;String, Double&gt;</span>,  <span class="cm">// Field path -> boost factor</span>
+    <span class="kw">val</span> sortFactors: <span class="tp">SortFactors</span>        <span class="cm">// The scoring rules!</span>
+) {
+    <span class="kw">data class</span> <span class="tp">SortFactors</span>(
+        <span class="kw">val</span> staticFactors: <span class="tp">List&lt;SearchOperatorBlock&gt;</span> = listOf(),     <span class="cm">// Pre-built scoring blocks</span>
+        <span class="kw">val</span> placeholders: <span class="tp">List&lt;SearchBlockTemplate.Request&gt;</span> = listOf() <span class="cm">// Dynamic templates</span>
+    )
+}</code></pre>
+
+    <h3>SortType &rarr; SortCriteria Mapping</h3>
+    <table>
+        <thead><tr><th>Frontend SortCriteria</th><th>Internal SortType</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>RELEVANCE (or null)</td><td>RECOMMENDED</td><td>Default sort</td></tr>
+            <tr><td>PRICE_LOWEST + condition=NEW</td><td>LOW_PRICE_NEW_CAR</td><td rowspan="2">Context-aware: different scoring for NEW vs USED</td></tr>
+            <tr><td>PRICE_LOWEST + condition=USED</td><td>LOW_PRICE_USED_CAR</td></tr>
+            <tr><td>PRICE_HIGHEST + condition=NEW</td><td>HIGH_PRICE_NEW_CAR</td><td rowspan="2">Same context-aware pattern</td></tr>
+            <tr><td>PRICE_HIGHEST + condition=USED</td><td>HIGH_PRICE_USED_CAR</td></tr>
+            <tr><td>SHIPPING_FEE_LOWEST</td><td>SHIPPING_FEE_LOWEST</td><td></td></tr>
+            <tr><td>LEASING_LOWEST</td><td>LEASING_LOWEST</td><td></td></tr>
+            <tr><td>MILEAGE_LOWEST</td><td>LOWEST_MILEAGE</td><td></td></tr>
+            <tr><td>YEAR_NEWEST</td><td>NEWEST_YEAR</td><td></td></tr>
+            <tr><td>YEAR_OLDEST</td><td>OLDEST_YEAR</td><td></td></tr>
+            <tr><td>INVENTORY_NEWEST</td><td>INVENTORY_NEWEST</td><td></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Score Caching</h3>
+    <span class="file-ref">search/.../cache/SearchScoreWeightsCache.kt</span>
+    <p>Enabled score weights are cached in memory and refreshed on a schedule. This avoids a DB lookup on every search request:</p>
+<pre><code><span class="ann">@PostConstruct</span>
+<span class="kw">private fun</span> <span class="fn">initCache</span>() = <span class="fn">refreshEnabledCache</span>()
+
+<span class="ann">@Scheduled</span>(fixedRateString = <span class="str">"\${cache.enabled-score-weight-ttl-ms}"</span>)
+<span class="kw">fun</span> <span class="fn">refreshEnabledCache</span>() {
+    <span class="kw">val</span> refreshedValues = runBlocking { searchScoreWeightsDao.<span class="fn">findEnabled</span>() }
+        .<span class="fn">associateBy</span> { it.sortType }
+    enabledScoreWeightsCache.<span class="fn">putAll</span>(refreshedValues)
+}</code></pre>
+
+    <h3>Score Types Available</h3>
+    <table>
+        <thead><tr><th>Score Block</th><th>Purpose</th><th>MongoDB Output</th></tr></thead>
+        <tbody>
+            <tr><td><code>BoostScoreBlock(2.5)</code></td><td>Multiply match score by constant</td><td><code>{ "boost": { "value": 2.5 } }</code></td></tr>
+            <tr><td><code>ConstantScoreBlock(1000)</code></td><td>Fixed score regardless of match quality</td><td><code>{ "constant": { "value": 1000 } }</code></td></tr>
+            <tr><td><code>FunctionScoreBlock(gauss(...))</code></td><td>Score decays with distance from origin</td><td><code>{ "function": { "gauss": {...} } }</code></td></tr>
+            <tr><td><code>FunctionScoreBlock(path(...))</code></td><td>Use a document field value as the score</td><td><code>{ "function": { "path": { "value": "price" } } }</code></td></tr>
+            <tr><td><code>FunctionScoreBlock(multiply(...))</code></td><td>Combine multiple scoring expressions</td><td><code>{ "function": { "multiply": [...] } }</code></td></tr>
+            <tr><td><code>EmbeddedScoreBlock(MAX)</code></td><td>Score from nested array (max element)</td><td><code>{ "embedded": { "aggregate": "maximum" } }</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Example: Boost Newer Inventory Automatically</h3>
+    <p>This would be a <code>staticFactor</code> in the RECOMMENDED sort's <code>SearchScoreWeights</code>:</p>
+<pre><code><span class="cm">// NearBlock: vehicles closer to current year score higher</span>
+<span class="tp">NearBlock</span>(
+    path   = <span class="str">"ymmt.year"</span>,
+    origin = <span class="num">2026</span>,     <span class="cm">// Current year = highest score</span>
+    pivot  = <span class="num">3</span>         <span class="cm">// Score halves every 3 years from origin</span>
+)
+
+<span class="cm">// MongoDB: { "near": { "path": "ymmt.year", "origin": 2026, "pivot": 3 } }</span></code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 7. TEMPLATES ═══ -->
+<section id="templates" class="section">
+    <h2><span class="step-num step-yellow">7</span> Dynamic Score Templates (Shipping &amp; Leasing)</h2>
+    <span class="file-ref">search/.../builder/SearchBlockTemplateBuilder.kt</span>
+
+    <p>Some scoring blocks need user-specific data (postal code, state) that can't be known when the score weight is saved to the DB. These are resolved at query time via templates:</p>
+
+<pre><code><span class="kw">enum class</span> <span class="tp">SearchBlockTemplate</span> {
+    FREE_SHIPPING,         <span class="cm">// Boost vehicles with free shipping to user's zip</span>
+    BASE_SHIPPING_LOWEST,  <span class="cm">// Boost vehicles with lowest shipping cost</span>
+    LEASING_LOWEST         <span class="cm">// Boost vehicles with lowest lease payment</span>
+}</code></pre>
+
+    <h3>FREE_SHIPPING Template</h3>
+    <span class="file-ref">search/.../builder/ShippingBuilder.kt</span>
+<pre><code><span class="kw">fun</span> <span class="fn">freeShippingBuilder</span>(scoreBlock: <span class="tp">ScoreBlock</span>?, userLocation: <span class="tp">UserLocation</span>?): <span class="tp">SearchOperatorBlock</span>? {
+    <span class="kw">return</span> userLocation?.postalCode?.<span class="kw">let</span> { postalCode -&gt;
+        <span class="tp">TextBlock</span>(
+            query = postalCode,                          <span class="cm">// "97218"</span>
+            path  = Vehicle::dealer / Dealer::zoneZips,  <span class="cm">// Search free-ship zip list</span>
+            scoreBlock = scoreBlock                      <span class="cm">// Custom boost from scoreWeight config</span>
+        )
+    }
+}
+<span class="cm">// If user zip is in dealer's free zones, this should-clause matches and boosts the score</span></code></pre>
+
+    <h3>BASE_SHIPPING_LOWEST Template</h3>
+<pre><code><span class="kw">fun</span> <span class="fn">baseShippingLowestBuilder</span>(scoreBlock: <span class="tp">ScoreBlock</span>?, userLocation: <span class="tp">UserLocation</span>?): <span class="tp">SearchOperatorBlock</span>? {
+    <span class="kw">return</span> <span class="tp">CompoundBlock</span>(
+        must = listOf(
+            <span class="tp">ExistsBlock</span>(path = <span class="str">"dealer.stateShippingMap.${userLocation.state}"</span>)
+        ),
+        mustNot = listOf(
+            <span class="tp">TextBlock</span>(query = postalCode, path = Vehicle::dealer / Dealer::zoneZips)
+        ),
+        scoreBlock = scoreBlock  <span class="cm">// e.g. FunctionScoreBlock(path("dealer.stateShippingMap.OR"))</span>
+    )
+}
+<span class="cm">// Matches vehicles NOT in free zone but WITH a state shipping cost, scored by that cost</span></code></pre>
+
+    <h3>LEASING_LOWEST Template</h3>
+    <span class="file-ref">search/.../builder/LeasingBuilder.kt</span>
+<pre><code><span class="kw">suspend fun</span> <span class="fn">lowestLeasingBuilder</span>(scoreBlock: <span class="tp">ScoreBlock</span>?, userLocation: <span class="tp">UserLocation</span>?, filters: <span class="tp">Filters</span>?): <span class="tp">CompoundBlock</span>? {
+    <span class="kw">val</span> makeRegions = postalCodeOemRegionCache.<span class="fn">get</span>(userLocation?.postalCode)?.makeRegions
+
+    <span class="kw">return</span> <span class="tp">CompoundBlock</span>(
+        should = makeRegions.<span class="fn">map</span> { (make, regionId) -&gt;
+            <span class="tp">CompoundBlock</span>(
+                must = listOf(
+                    <span class="tp">QueryStringBlock</span>(path = ymmt.make, query = make),
+                    <span class="tp">EmbeddedDocument</span>(
+                        path = leasing.regionalPrices,
+                        operator = <span class="tp">IntRangeBlock</span>(
+                            path = regionalPrices.regionId,
+                            value = regionId,
+                            scoreBlock = <span class="tp">FunctionScoreBlock</span>(
+                                expression = <span class="tp">PathBlock</span>(value = regionalPrices.amountInCents)
+                                <span class="cm">// Sets atlas score = the monthly lease price</span>
+                            )
+                        ),
+                        scoreBlock = <span class="tp">EmbeddedScoreBlock</span>(aggregate = MAX)
+                    )
+                )
+            )
+        },
+        scoreBlock = scoreBlock  <span class="cm">// Product-defined score manipulation</span>
+    )
+}
+<span class="cm">// Result: Score = regional lease price, allowing the outer scoreBlock to invert/transform it</span></code></pre>
+
+    <h3>String Template Resolution</h3>
+    <p>Score blocks stored in MongoDB can contain string templates like <code>#USER_STATE#</code> and <code>#USER_POSTAL_CODE#</code>. These are resolved at query time by <code>StringTemplateResolver</code> using reflection to walk the block tree and replace template strings:</p>
+<pre><code><span class="cm">// In MongoDB: { "path": { "value": "dealer.stateShippingMap.#USER_STATE#" } }</span>
+<span class="cm">// At runtime: { "path": { "value": "dealer.stateShippingMap.OR" } }  (if user state = "OR")</span></code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 8. POST-SEARCH ═══ -->
+<section id="postsearch" class="section">
+    <h2><span class="step-num step-red">8</span> Post-Search Stages ($addFields, $project)</h2>
+
+    <h3>8.1 &mdash; Shipping Fee Calculation</h3>
+    <span class="file-ref">search/.../builder/ShippingBuilder.kt</span>
+    <p>Added only when the GraphQL query requests <code>shippingFee</code>:</p>
+<pre><code><span class="kw">fun</span> <span class="fn">buildShippingBlock</span>(userLocation: <span class="tp">UserLocation</span>?): <span class="tp">Block</span>? =
+    userLocation?.<span class="kw">run</span> {
+        <span class="tp">AddFieldsBlock</span>(
+            Vehicle::shippingFee,
+            <span class="tp">SwitchBlock</span>(
+                <span class="tp">SwitchBlock.BranchBlock</span>(
+                    case = Document(<span class="str">"\$in"</span>, listOf(postalCode, dealerZoneZipsPath)),
+                    then = <span class="num">0L</span>  <span class="cm">// Free shipping!</span>
+                ),
+                default = userStateMatrixPath  <span class="cm">// Lookup from state shipping matrix</span>
+            )
+        )
+    }</code></pre>
+
+<pre><code><span class="cm">// MongoDB:</span>
+{
+  <span class="json-key">"$addFields"</span>: {
+    <span class="json-key">"shippingFee"</span>: {
+      <span class="json-key">"$switch"</span>: {
+        <span class="json-key">"branches"</span>: [{
+          <span class="json-key">"case"</span>: { <span class="json-key">"$in"</span>: [<span class="json-str">"97218"</span>, <span class="json-str">"$dealer.zoneZips"</span>] },
+          <span class="json-key">"then"</span>: <span class="json-num">0</span>
+        }],
+        <span class="json-key">"default"</span>: <span class="json-str">"$dealer.stateShippingMap.OR"</span>
+      }
+    }
+  }
+}</code></pre>
+
+    <h3>8.2 &mdash; Leasing Regional Price Projection</h3>
+    <span class="file-ref">search/.../builder/LeasingBuilder.kt</span>
+    <p>Two <code>$addFields</code> stages: first filters the <code>regionalPrices</code> array to the user's region, then extracts the price:</p>
+<pre><code><span class="cm">// Stage 1: Filter regionalPrices to user's OEM region</span>
+{ <span class="json-key">"$addFields"</span>: { <span class="json-key">"leasing.regionalPrices"</span>: { <span class="json-key">"$filter"</span>: {
+    <span class="json-key">"input"</span>: <span class="json-str">"$leasing.regionalPrices"</span>,
+    <span class="json-key">"cond"</span>: { <span class="json-key">"$or"</span>: [
+      { <span class="json-key">"$and"</span>: [
+        { <span class="json-key">"$eq"</span>: [<span class="json-str">"$ymmt.make"</span>, <span class="json-str">"Honda"</span>] },
+        { <span class="json-key">"$eq"</span>: [<span class="json-str">"$$regionalPrices.regionId"</span>, <span class="json-num">101</span>] }
+      ]}
+    ]}
+} } } }
+
+<span class="cm">// Stage 2: Set defaultPrice from the single remaining element</span>
+{ <span class="json-key">"$addFields"</span>: { <span class="json-key">"leasing.defaultPrice"</span>: { <span class="json-key">"$last"</span>: <span class="json-str">"$leasing.regionalPrices.amountInCents"</span> } } }</code></pre>
+
+    <h3>8.3 &mdash; Field Projection</h3>
+    <span class="file-ref">search/.../builder/ProjectBuilder.kt</span>
+    <p>Only fields requested by the GraphQL query are projected. If the query requests <code>score</code>, the Atlas Search score is added via <code>$meta: "searchScore"</code>:</p>
+<pre><code>{ <span class="json-key">"$project"</span>: {
+    <span class="json-key">"vin"</span>: <span class="json-num">1</span>, <span class="json-key">"price"</span>: <span class="json-num">1</span>, <span class="json-key">"ymmt"</span>: <span class="json-num">1</span>, <span class="json-key">"image"</span>: <span class="json-num">1</span>,
+    <span class="json-key">"shippingFee"</span>: <span class="json-num">1</span>, <span class="json-key">"leasing"</span>: <span class="json-num">1</span>,
+    <span class="json-key">"score"</span>: { <span class="json-key">"$meta"</span>: <span class="json-str">"searchScore"</span> }
+} }</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 9. FACETS ═══ -->
+<section id="facets" class="section">
+    <h2><span class="step-num step-blue">9</span> Facets &amp; Counts ($searchMeta)</h2>
+    <span class="file-ref">search/.../builder/SearchMetaBuilder.kt</span>
+
+    <p>Facets and total counts use <code>$searchMeta</code> (NOT <code>$search</code>) &mdash; same filters, but <strong>no scoring</strong>. This powers the filter sidebar showing "Toyota (1,500), Honda (1,200)".</p>
+
+    <h3>Available Facet Fields</h3>
+    <span class="file-ref">graphql-shared/.../models/Facets.kt</span>
+    <table>
+        <thead><tr><th>Enum</th><th>Facet Name</th><th>Vehicle Path</th></tr></thead>
+        <tbody>
+            <tr><td>MAKE</td><td>makeFacet</td><td><code>ymmt.make</code></td></tr>
+            <tr><td>MODEL</td><td>modelFacet</td><td><code>ymmt.model</code></td></tr>
+            <tr><td>TRIM</td><td>trimFacet</td><td><code>ymmt.trim</code></td></tr>
+            <tr><td>CONDITION</td><td>vehicleConditionFacet</td><td><code>vehicleCondition</code></td></tr>
+            <tr><td>BODY_STYLE</td><td>bodyStyleFacet</td><td><code>bodyStyle</code></td></tr>
+        </tbody>
+    </table>
+
+<pre><code>{
+  <span class="json-key">"$searchMeta"</span>: {
+    <span class="json-key">"index"</span>: <span class="json-str">"shopSearch"</span>,
+    <span class="json-key">"facet"</span>: {
+      <span class="json-key">"operator"</span>: { <span class="json-key">"compound"</span>: { <span class="json-key">"filter"</span>: [<span class="cm">/* same filters as $search, NO scoring */</span>] } },
+      <span class="json-key">"facets"</span>: {
+        <span class="json-key">"makeFacet"</span>:  { <span class="json-key">"type"</span>: <span class="json-str">"string"</span>, <span class="json-key">"path"</span>: <span class="json-str">"ymmt.make"</span>,  <span class="json-key">"numBuckets"</span>: <span class="json-num">100</span> },
+        <span class="json-key">"modelFacet"</span>: { <span class="json-key">"type"</span>: <span class="json-str">"string"</span>, <span class="json-key">"path"</span>: <span class="json-str">"ymmt.model"</span>, <span class="json-key">"numBuckets"</span>: <span class="json-num">100</span> }
+      }
+    }
+  }
+}
+
+<span class="cm">// Response:</span>
+{ <span class="json-key">"count"</span>: { <span class="json-key">"lowerBound"</span>: <span class="json-num">5000</span> },
+  <span class="json-key">"facet"</span>: {
+    <span class="json-key">"makeFacet"</span>: { <span class="json-key">"buckets"</span>: [
+      { <span class="json-key">"_id"</span>: <span class="json-str">"Toyota"</span>, <span class="json-key">"count"</span>: <span class="json-num">1500</span> },
+      { <span class="json-key">"_id"</span>: <span class="json-str">"Honda"</span>,  <span class="json-key">"count"</span>: <span class="json-num">1200</span> }
+    ]}
+  }
+}</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 10. AUTOCOMPLETE ═══ -->
+<section id="autocomplete" class="section">
+    <h2><span class="step-num step-purple">10</span> Autocomplete Suggestions</h2>
+    <span class="file-ref">search/.../builder/SearchSuggestionsBuilder.kt</span>
+
+    <p>Uses the separate <code>shopSuggestions</code> Atlas Search index on the <code>searchSuggestion</code> collection. Returns up to 4 suggestions:</p>
+
+<pre><code><span class="cm">// Pipeline: $search (autocomplete) -> $limit(4)</span>
+{
+  <span class="json-key">"$search"</span>: {
+    <span class="json-key">"index"</span>: <span class="json-str">"shopSuggestions"</span>,
+    <span class="json-key">"compound"</span>: {
+      <span class="json-key">"must"</span>: [{
+        <span class="json-key">"autocomplete"</span>: {
+          <span class="json-key">"path"</span>: <span class="json-str">"value"</span>,
+          <span class="json-key">"query"</span>: <span class="json-str">"hon"</span>   <span class="cm">// User typing...</span>
+        }
+      }]
+    }
+  }
+}
+<span class="cm">// Returns: ["Honda", "Honda Civic", "Honda Accord", "Honda CR-V"]</span></code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 11. DSL ═══ -->
+<section id="dsl" class="section">
+    <h2><span class="step-num step-green">DSL</span> The Aggregation DSL &mdash; Block Reference</h2>
+    <span class="file-ref">library/.../mongo/aggregation/</span>
+
+    <p>Every MongoDB aggregation operator is represented as a Kotlin <code>Block</code> subclass. Blocks compose together via <code>Pipeline&lt;T&gt;</code> and serialize to BSON via <code>toMongoDocument()</code>:</p>
+
+<pre><code><span class="cm">// Type-safe pipeline construction</span>
+<span class="tp">Pipeline</span>&lt;<span class="tp">Vehicle</span>&gt;()
+    .<span class="fn">addStage</span>(<span class="tp">SearchBlock</span>(index, <span class="tp">CompoundBlock</span>(...)))
+    .<span class="fn">addStages</span>(listOf(<span class="tp">SkipBlock</span>(<span class="num">0</span>), <span class="tp">LimitBlock</span>(<span class="num">24</span>)))
+    .<span class="fn">addStage</span>(<span class="tp">AddFieldsBlock</span>(Vehicle::shippingFee, <span class="tp">SwitchBlock</span>(...)))
+    .<span class="fn">addStage</span>(<span class="tp">ProjectBlock</span>(fields))
+    .<span class="fn">toMongoQuery</span>()  <span class="cm">// -> List&lt;Bson&gt; ready for MongoDB</span></code></pre>
+
+    <h3>Search Operator Blocks</h3>
+    <table>
+        <thead><tr><th>Block</th><th>Atlas Search Operator</th><th>Use Case</th></tr></thead>
+        <tbody>
+            <tr><td><code>CompoundBlock</code></td><td><code>compound</code></td><td>Boolean logic (filter/must/should/mustNot)</td></tr>
+            <tr><td><code>TextBlock</code></td><td><code>text</code></td><td>Full-text search with fuzzy matching</td></tr>
+            <tr><td><code>RangeBlock</code></td><td><code>range</code></td><td>Numeric/date range filters</td></tr>
+            <tr><td><code>EqualsBlock</code></td><td><code>equals</code></td><td>Boolean field matching</td></tr>
+            <tr><td><code>QueryStringBlock</code></td><td><code>queryString</code></td><td>Lucene query syntax (OR/AND)</td></tr>
+            <tr><td><code>NearBlock</code></td><td><code>near</code></td><td>Proximity-based scoring (year, price)</td></tr>
+            <tr><td><code>ExistsBlock</code></td><td><code>exists</code></td><td>Field presence check</td></tr>
+            <tr><td><code>AutocompleteBlock</code></td><td><code>autocomplete</code></td><td>Typeahead suggestions</td></tr>
+            <tr><td><code>EmbeddedDocument</code></td><td><code>embeddedDocument</code></td><td>Search within nested arrays</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Projection Blocks</h3>
+    <table>
+        <thead><tr><th>Block</th><th>MongoDB Stage</th><th>Use Case</th></tr></thead>
+        <tbody>
+            <tr><td><code>ProjectBlock</code></td><td><code>$project</code></td><td>Include/exclude fields</td></tr>
+            <tr><td><code>AddFieldsBlock</code></td><td><code>$addFields</code></td><td>Computed fields (shipping, leasing, score)</td></tr>
+            <tr><td><code>FilterBlock</code></td><td><code>$filter</code></td><td>Filter arrays within documents</td></tr>
+            <tr><td><code>SwitchBlock</code></td><td><code>$switch</code></td><td>Conditional logic (if/else)</td></tr>
+            <tr><td><code>MapBlock</code></td><td><code>$map</code></td><td>Transform array elements</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Score Expression Blocks</h3>
+    <table>
+        <thead><tr><th>Block</th><th>MongoDB Score</th><th>Use Case</th></tr></thead>
+        <tbody>
+            <tr><td><code>BoostScoreBlock(2.5)</code></td><td><code>{ boost: { value: 2.5 } }</code></td><td>Multiply match score</td></tr>
+            <tr><td><code>ConstantScoreBlock(100)</code></td><td><code>{ constant: { value: 100 } }</code></td><td>Fixed score</td></tr>
+            <tr><td><code>FunctionScoreBlock(expr)</code></td><td><code>{ function: { ... } }</code></td><td>Custom scoring function</td></tr>
+            <tr><td><code>PathBlock("price")</code></td><td><code>{ path: { value: "price" } }</code></td><td>Use field value as score</td></tr>
+            <tr><td><code>GaussExpressionBlock(...)</code></td><td><code>{ gauss: { ... } }</code></td><td>Gaussian decay (distance scoring)</td></tr>
+            <tr><td><code>MultiplyExpressionBlock([...])</code></td><td><code>{ multiply: [...] }</code></td><td>Multiply expressions together</td></tr>
+            <tr><td><code>AddExpressionBlock([...])</code></td><td><code>{ add: [...] }</code></td><td>Sum expressions together</td></tr>
+            <tr><td><code>RelevanceScoreBlock()</code></td><td><code>{ score: "relevance" }</code></td><td>Reference to base relevance score</td></tr>
+            <tr><td><code>EmbeddedScoreBlock(MAX)</code></td><td><code>{ embedded: { aggregate: "maximum" } }</code></td><td>Score from nested array</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ═══════════════════════════════════ 12. REST API ═══ -->
+<section id="scoreapi" class="section">
+    <h2><span class="step-num step-orange">API</span> Managing Score Weights (REST API)</h2>
+    <span class="file-ref">routes/.../handlers/SearchScoreWeightsHandler.kt</span>
+
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>GET</code></td><td><code>/search/score-weights</code></td><td>List latest version of each sort type (or all versions of a specific type via <code>?sortType=X</code>)</td></tr>
+            <tr><td><code>GET</code></td><td><code>/search/score-weights/templates</code></td><td>List available dynamic templates (FREE_SHIPPING, BASE_SHIPPING_LOWEST, LEASING_LOWEST)</td></tr>
+            <tr><td><code>POST</code></td><td><code>/search/score-weights</code></td><td>Create new version (auto-increments). Body: <code>SearchScoreWeightRequest</code></td></tr>
+            <tr><td><code>POST</code></td><td><code>/search/score-weights/enable</code></td><td>Activate a version: <code>?sortType=X&amp;version=N</code></td></tr>
+            <tr><td><code>DELETE</code></td><td><code>/search/score-weights</code></td><td>Delete a version: <code>?sortType=X&amp;version=N</code> (cannot delete enabled version)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>A/B Testing via HTTP Header</h3>
+    <p>Test a specific score weight version without enabling it globally:</p>
+<pre><code><span class="cm">// Send this header with your GraphQL request:</span>
+Override-Score-Weight-Version: <span class="num">5</span>
+
+<span class="cm">// The search will use version 5 of the current sortType instead of the enabled version</span>
+<span class="cm">// No production impact &mdash; only affects this single request</span></code></pre>
+</section>
+
+<!-- ═══════════════════════════════════ 13. HOW TO MODIFY ═══ -->
+<section id="modify" class="section">
+    <h2><span class="step-num step-pink">!</span> How to Modify a Search Rule</h2>
+
+    <div class="callout callout-warn">
+        <strong>There is no search rules UI.</strong>
+        All search behavior is configured through a combination of <strong>code</strong> (filter logic, builder classes) and <strong>data</strong> (SearchScoreWeights in MongoDB, managed via REST API).
+    </div>
+
+    <h3>Scenario 1: Change How Results Are Ranked</h3>
+    <p><strong>Where:</strong> <code>searchScoreWeights</code> collection via REST API</p>
+    <ol>
+        <li><code>GET /search/score-weights?sortType=RECOMMENDED</code> &mdash; see current config</li>
+        <li><code>POST /search/score-weights</code> &mdash; create a new version with modified <code>textSearchWeights</code> and/or <code>sortFactors</code></li>
+        <li>Test with header <code>Override-Score-Weight-Version: N</code></li>
+        <li><code>POST /search/score-weights/enable?sortType=RECOMMENDED&amp;version=N</code> &mdash; activate it</li>
+    </ol>
+
+    <h3>Scenario 2: Add a New Filter</h3>
+    <p><strong>Where:</strong> Code changes required</p>
+    <ol>
+        <li>Add the new field to <code>Filters</code> data class in <code>VehicleCommonInputs.kt</code></li>
+        <li>Add filter construction logic in <code>FilterBuilder.buildSearchFilterBlocks()</code></li>
+        <li>Add validation in <code>VehicleCommonInputs.validate()</code></li>
+        <li>Ensure the field is mapped in the <code>shopSearch</code> Atlas Search index (Terraform)</li>
+    </ol>
+
+    <h3>Scenario 3: Change Text Search Field Weights</h3>
+    <p><strong>Where:</strong> <code>searchScoreWeights</code> collection &mdash; no code changes needed</p>
+    <p>Modify the <code>textSearchWeights</code> map to boost/reduce specific fields:</p>
+<pre><code><span class="cm">// To make VIN matches dominate over make/model:</span>
+POST /search/score-weights
+{
+  <span class="json-key">"sortType"</span>: <span class="json-str">"RECOMMENDED"</span>,
+  <span class="json-key">"description"</span>: <span class="json-str">"Boost VIN matches to 5.0"</span>,
+  <span class="json-key">"textSearchWeights"</span>: {
+    <span class="json-key">"vin"</span>: <span class="json-num">5.0</span>,
+    <span class="json-key">"ymmt.make"</span>: <span class="json-num">2.5</span>,
+    <span class="json-key">"ymmt.model"</span>: <span class="json-num">2.0</span>,
+    <span class="json-key">"ymmt.trim"</span>: <span class="json-num">1.5</span>,
+    <span class="json-key">"bodyStyle"</span>: <span class="json-num">1.0</span>
+  },
+  <span class="json-key">"sortFactors"</span>: { <span class="cm">/* keep existing staticFactors + placeholders */</span> }
+}</code></pre>
+
+    <h3>Scenario 4: Add a New Scoring Template</h3>
+    <p><strong>Where:</strong> Code changes required</p>
+    <ol>
+        <li>Add new enum value to <code>SearchBlockTemplate</code> in <code>SearchBlockTemplate.kt</code></li>
+        <li>Create the builder method (like <code>ShippingBuilder.freeShippingBuilder()</code>)</li>
+        <li>Add the <code>when</code> case in <code>SearchBlockTemplateBuilder.resolveSearchBlockFor()</code></li>
+        <li>Reference it from <code>SearchScoreWeights.sortFactors.placeholders</code> via REST API</li>
+    </ol>
+
+    <h3>Scenario 5: Modify the Fuzzy Search Behavior</h3>
+    <p><strong>Where:</strong> <code>TextBuilder.TextConstants</code></p>
+<pre><code><span class="cm">// Current values (hardcoded)</span>
+<span class="kw">const val</span> FUZZY_MAX_EDITS = <span class="num">1</span>       <span class="cm">// Allow 1 typo</span>
+<span class="kw">const val</span> FUZZY_PREFIX_LENGTH = <span class="num">0</span>  <span class="cm">// No exact prefix required</span>
+<span class="kw">const val</span> FUZZY_MAX_EXPANSIONS = <span class="num">50</span> <span class="cm">// Max fuzzy candidates</span></code></pre>
+
+    <h3>Scenario 6: Add a New Facet Field</h3>
+    <p><strong>Where:</strong> <code>FacetField</code> enum in <code>Facets.kt</code></p>
+    <ol>
+        <li>Add the enum value with <code>facetName</code> and <code>field</code> (KProperty path)</li>
+        <li>Ensure the field is indexed in the Atlas Search index as a facet-compatible type</li>
+    </ol>
+</section>
+
+<!-- ═══════════════════════════════════ 14. FILES ═══ -->
+<section id="files" class="section">
+    <h2><span class="step-num step-cyan">F</span> Key File Reference</h2>
+
+    <table>
+        <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>search/.../queries/SearchPageQueries.kt</code></td><td>GraphQL entry point: search(), getFacets(), getSearchSuggestions()</td></tr>
+            <tr><td><code>search/.../builder/PipelineBuilder.kt</code></td><td>Orchestrates all builders into a Pipeline&lt;Vehicle&gt;</td></tr>
+            <tr><td><code>search/.../builder/SearchBuilder.kt</code></td><td>Creates the SearchBlock ($search stage wrapper)</td></tr>
+            <tr><td><code>search/.../builder/SearchOperatorBuilder.kt</code></td><td>Builds the CompoundBlock with scoring + filters</td></tr>
+            <tr><td><code>search/.../builder/FilterBuilder.kt</code></td><td>Constructs all hard-constraint filter blocks</td></tr>
+            <tr><td><code>search/.../builder/TextBuilder.kt</code></td><td>Fuzzy text search with per-field boost weights</td></tr>
+            <tr><td><code>search/.../builder/ShippingBuilder.kt</code></td><td>Shipping fee calc + free shipping score boost</td></tr>
+            <tr><td><code>search/.../builder/LeasingBuilder.kt</code></td><td>Lease filter, price projection, score boost</td></tr>
+            <tr><td><code>search/.../builder/SearchBlockTemplateBuilder.kt</code></td><td>Resolves dynamic templates at query time</td></tr>
+            <tr><td><code>search/.../builder/SearchMetaBuilder.kt</code></td><td>Builds $searchMeta for facets and counts</td></tr>
+            <tr><td><code>search/.../builder/PageBuilder.kt</code></td><td>$skip + $limit pagination</td></tr>
+            <tr><td><code>search/.../builder/ProjectBuilder.kt</code></td><td>$project field selection from GraphQL query</td></tr>
+            <tr><td><code>search/.../cache/SearchScoreWeightsCache.kt</code></td><td>In-memory cache for enabled score weights</td></tr>
+            <tr><td><code>search/.../cache/PostalCodeOemRegionCache.kt</code></td><td>Cache for postal code to OEM region mappings</td></tr>
+            <tr><td><code>library/.../models/SearchScoreWeights.kt</code></td><td>Score weights data model + SortType enum</td></tr>
+            <tr><td><code>library/.../daos/mongo/SearchScoreWeightsDaoImpl.kt</code></td><td>CRUD + versioning for score weights</td></tr>
+            <tr><td><code>library/.../mongo/aggregation/</code></td><td>Custom aggregation DSL (Pipeline, Block, all operators)</td></tr>
+            <tr><td><code>library/.../config/SearchConfig.kt</code></td><td>Atlas index names, text operator settings</td></tr>
+            <tr><td><code>graphql-shared/.../models/VehicleCommonInputs.kt</code></td><td>Input types: Filters, SortCriteria, UserLocation</td></tr>
+            <tr><td><code>graphql-shared/.../models/Facets.kt</code></td><td>FacetField enum, facet response types</td></tr>
+            <tr><td><code>routes/.../handlers/SearchScoreWeightsHandler.kt</code></td><td>REST API for managing score weights</td></tr>
+            <tr><td><code>terraform/.../mongo-indexes.tf</code></td><td>MongoDB index definitions (Terraform)</td></tr>
+        </tbody>
+    </table>
+</section>
+
+</div>
+
+<!-- ── FOOTER ── -->
+<footer style="border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--text-muted); font-size:.85rem;">
+    Odyssey Search Query Logic Documentation &mdash; Generated from codebase analysis &mdash; Last updated February 2026
+</footer>
+
+<script>
+    document.querySelectorAll('.container table').forEach(function(table) {
+        if (!table.closest('.table-wrap')) {
+            var wrap = document.createElement('div');
+            wrap.className = 'table-wrap';
+            table.parentNode.insertBefore(wrap, table);
+            wrap.appendChild(table);
+        }
+    });
+</script>
+</body>
+</html>

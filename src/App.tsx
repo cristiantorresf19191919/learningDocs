@@ -19,6 +19,12 @@ import GraphqlExposurePage from './pages/GraphqlExposurePage';
 import DeploymentConfigPage from './pages/DeploymentConfigPage';
 import GlossaryPage from './pages/GlossaryPage';
 import ReactorOperatorsPage from './pages/ReactorOperatorsPage';
+import SearchPipelinePage from './pages/SearchPipelinePage';
+import EdsImportPipelinePage from './pages/EdsImportPipelinePage';
+import SearchFlowDeepDivePage from './pages/SearchFlowDeepDivePage';
+import OdysseyDocumentationPage from './pages/OdysseyDocumentationPage';
+import OdysseySearchQueryLogicPage from './pages/OdysseySearchQueryLogicPage';
+import OdysseyTechnicalGuidePage from './pages/OdysseyTechnicalGuidePage';
 
 /* ---------- routes ---------- */
 
@@ -45,6 +51,12 @@ export default function App() {
         <Route path="/deployment-config" element={<DeploymentConfigPage />} />
         <Route path="/glossary" element={<GlossaryPage />} />
         <Route path="/reactor-operators" element={<ReactorOperatorsPage />} />
+        <Route path="/search-pipeline" element={<SearchPipelinePage />} />
+        <Route path="/eds-import-pipeline" element={<EdsImportPipelinePage />} />
+        <Route path="/search-flow-deep-dive" element={<SearchFlowDeepDivePage />} />
+        <Route path="/odyssey-documentation" element={<OdysseyDocumentationPage />} />
+        <Route path="/odyssey-search-query-logic" element={<OdysseySearchQueryLogicPage />} />
+        <Route path="/odyssey-technical-guide" element={<OdysseyTechnicalGuidePage />} />
       </Route>
     </Routes>
   );

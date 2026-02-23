@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odyssey API - Complete Architecture Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --dark: #1a202c;
+            --darker: #0d1117;
+            --light: #f7fafc;
+            --code-bg: #2d3748;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --danger: #f56565;
+            --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-display: 'Outfit', var(--font-sans);
+            --content-max: 75rem;
+            --prose-max: 70ch;
+            --radius: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+
+        body {
+            font-family: var(--font-sans);
+            font-size: 1.0625rem;
+            line-height: 1.7;
+            color: var(--dark);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,144C960,149,1056,139,1152,128C1248,117,1344,107,1392,101.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+            background-size: cover;
+            animation: wave 10s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.25rem, 6vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .hero .tech-stack {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .tech-badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .tech-badge:nth-child(1) { animation-delay: 0s; }
+        .tech-badge:nth-child(2) { animation-delay: 0.2s; }
+        .tech-badge:nth-child(3) { animation-delay: 0.4s; }
+        .tech-badge:nth-child(4) { animation-delay: 0.6s; }
+        .tech-badge:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-20px); }
+            60% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 1rem 0;
+        }
+
+        nav a {
+            color: var(--dark);
+            text-decoration: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            transition: color 0.2s, background 0.2s, transform 0.2s;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        nav a:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        nav a:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Content Sections */
+        section {
+            padding: clamp(3rem, 8vw, 5rem) 0;
+            background: white;
+            animation: fadeIn 1s ease-out;
+        }
+
+        section .container {
+            max-width: var(--content-max);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        section:nth-child(even) {
+            background: var(--light);
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            margin-bottom: 2rem;
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.02em;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+            animation: expandWidth 0.8s ease-out;
+        }
+
+        @keyframes expandWidth {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            margin: 2rem 0 1rem;
+            color: var(--secondary);
+        }
+
+        h4 {
+            font-size: 1.4rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-dark);
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 4px solid var(--primary);
+            animation: cardSlideIn 0.6s ease-out;
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        /* Module Cards */
+        .module-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: codeAppear 0.5s ease-out;
+        }
+
+        @keyframes codeAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Tables */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 2rem 0;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            min-width: 480px;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--radius);
+            animation: tableSlideIn 0.6s ease-out;
+        }
+
+        @keyframes tableSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: var(--light);
+            transition: background 0.3s;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: white; }
+        .badge-danger { background: var(--danger); color: white; }
+
+        /* Flow Diagram */
+        .flow-diagram {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .flow-step:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateX(10px);
+        }
+
+        .flow-arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            animation: statPop 0.6s ease-out;
+        }
+
+        @keyframes statPop {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--darker);
+            color: white;
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Animations on scroll */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out;
+        }
+
+        .animate-on-scroll.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* List Styling */
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        /* Highlight boxes */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .warning-box {
+            background: rgba(237, 137, 54, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        /* Focus & accessibility */
+        a:focus-visible, button:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .card-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                min-height: auto;
+                padding: 3rem 1.5rem 4rem;
+            }
+
+            .hero h1 {
+                font-size: clamp(1.875rem, 8vw, 2.5rem);
+            }
+
+            .hero p {
+                font-size: 1.05rem;
+            }
+
+            .hero .tech-stack {
+                gap: 0.75rem;
+            }
+
+            .tech-badge {
+                padding: 0.4rem 0.85rem;
+                font-size: 0.8rem;
+            }
+
+            nav ul {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.25rem;
+                padding: 0.85rem 1rem;
+            }
+
+            nav a {
+                padding: 0.5rem 0.85rem;
+                font-size: 0.875rem;
+            }
+
+            section {
+                padding: 2.5rem 0;
+            }
+
+            h2 {
+                font-size: 1.65rem;
+            }
+
+            h3 { font-size: 1.4rem; }
+            h4 { font-size: 1.2rem; }
+
+            .stat-number { font-size: 2.25rem; }
+            .stat-card { padding: 1.5rem 1rem; }
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 0 1.25rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .hero .tech-stack { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1>🚗 Odyssey API</h1>
+            <p>Driveway.com's Microservices Platform for Vehicle Inventory & Search</p>
+            <div class="tech-stack">
+                <span class="tech-badge">Kotlin</span>
+                <span class="tech-badge">Spring Boot 3</span>
+                <span class="tech-badge">Project Reactor</span>
+                <span class="tech-badge">MongoDB Atlas</span>
+                <span class="tech-badge">GraphQL</span>
+                <span class="tech-badge">Azure Cloud</span>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="white">
+                <path d="M15 3L15 23M15 23L8 16M15 23L22 16" stroke="white" stroke-width="2" fill="none"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#modules">Modules</a></li>
+            <li><a href="#apis">APIs</a></li>
+            <li><a href="#data">Data Models</a></li>
+            <li><a href="#deployment">Deployment</a></li>
+            <li><a href="#cron">Cron Jobs</a></li>
+            <li><a href="#integrations">Integrations</a></li>
+            <li><a href="#testing">Testing</a></li>
+        </ul>
+    </nav>
+
+    <!-- Overview Section -->
+    <section id="overview">
+        <div class="container">
+            <h2>📋 Project Overview</h2>
+
+            <div class="highlight-box">
+                <p><strong>Odyssey-Api</strong> is the backend for Driveway.com's Shop functionality — a Kotlin/Spring Boot 3 microservices platform managing vehicle inventory, search, leasing, and availability.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">9</span>
+                    <span class="stat-label">Gradle Modules</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">Deployable Services</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">60+</span>
+                    <span class="stat-label">Domain Models</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">7</span>
+                    <span class="stat-label">External Integrations</span>
+                </div>
+            </div>
+
+            <h3>Key Technologies</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>⚙️ Runtime</h4>
+                    <ul>
+                        <li>Kotlin 1.9.20</li>
+                        <li>JDK 21 (Eclipse Temurin)</li>
+                        <li>Gradle 8.5 (Kotlin DSL)</li>
+                        <li>Spring Boot 3.4.3</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🔄 Reactive Stack</h4>
+                    <ul>
+                        <li>Project Reactor 3.5.x</li>
+                        <li>Spring WebFlux 6.2.3</li>
+                        <li>KMongo Reactive 4.7.1</li>
+                        <li>BlockHound 1.0.11</li>
+                        <li>Kotlinx Coroutines 1.7.3</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>💾 Data & Messaging</h4>
+                    <ul>
+                        <li>MongoDB Atlas</li>
+                        <li>MongoDB Atlas Search</li>
+                        <li>Azure Service Bus</li>
+                        <li>Azure Blob Storage</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>📊 Observability</h4>
+                    <ul>
+                        <li>DataDog APM</li>
+                        <li>Azure App Insights</li>
+                        <li>OpenTracing</li>
+                        <li>Micrometer</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture">
+        <div class="container">
+            <h2>🏗️ System Architecture</h2>
+
+            <h3>Microservices Architecture</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <strong>External Systems</strong> (EDS, Finance, Cart) → Feeds data into Odyssey
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>odyssey-cron</strong> → Imports inventory from Azure Blob (EDS TSV files)
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>MongoDB Atlas</strong> (shopInventory database) → Central data store
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>Service Bus Topics</strong> → Event-driven messaging for leasing, availability, deltas
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>odyssey-consumer</strong> + <strong>odyssey-availability-sub</strong> → Process messages
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>odyssey-search-graphql</strong> + <strong>odyssey-api</strong> → Expose data via APIs
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>Clients</strong> (Web, Mobile) → Consume vehicle search and details
+                </div>
+            </div>
+
+            <h3>Key Architectural Patterns</h3>
+            <ul>
+                <li><strong>Reactive Everywhere:</strong> All DAOs return Mono&lt;T&gt; / Flux&lt;T&gt; (Project Reactor). Services use reactive chains — never block. BlockHound detects violations.</li>
+                <li><strong>Event-Driven:</strong> Azure Service Bus topics for async messaging (inventory-delta, leasing-incentives, cart-status-update, vehicle-data).</li>
+                <li><strong>Code-First GraphQL:</strong> Uses Expedia's graphql-kotlin-spring-server — no .graphqls schema files. Schema is generated from annotated Kotlin classes extending Query or Mutation.</li>
+                <li><strong>Dual API Surface:</strong> GraphQL (search module) for queries, GraphQL mutations + REST (routes module) for mutations and internal operations.</li>
+                <li><strong>Atlas Search:</strong> MongoDB Atlas Search indexes (shopSearch on vehicleV3 with 50+ mapped fields, shopSuggestions for autocomplete). Local MongoDB Community does NOT support Atlas Search.</li>
+                <li><strong>Staged Imports:</strong> Cron writes to temporary temp_vehicleV3_* collections, validates delta &lt; 15,000 vehicles, then merges to live vehicleV3 collection preserving leasing, suppressions, and availability state.</li>
+                <li><strong>Configuration-Driven Scoring:</strong> Versioned search weights stored in searchScoreWeights collection per SortType, configurable via REST API at /search/score-weights.</li>
+                <li><strong>Custom Aggregation DSL:</strong> Pipeline&lt;T&gt; builder with Block-based operators for MongoDB aggregation pipelines, serializable via custom JSON serializer/deserializer using Reflections.</li>
+                <li><strong>Profile-Based Configuration:</strong> laptop (local dev with dummy services), dev, uat, prod — all config in library/src/main/resources/.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Modules Section -->
+    <section id="modules">
+        <div class="container">
+            <h2>📦 Gradle Modules</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Module</th>
+                        <th>Purpose</th>
+                        <th>Type</th>
+                        <th>Main Class</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>library</strong></td>
+                        <td>Shared core: models, DAOs, external clients, config</td>
+                        <td><span class="badge badge-primary">Library</span></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>routes</strong></td>
+                        <td>REST API for inventory mutations and internal services</td>
+                        <td><span class="badge badge-success">Spring Boot</span></td>
+                        <td>OdysseyApplication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>search</strong></td>
+                        <td>GraphQL API for vehicle search/queries</td>
+                        <td><span class="badge badge-success">Spring Boot</span></td>
+                        <td>OdysseyGraphQLApplication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>cron</strong></td>
+                        <td>Scheduled data imports, metrics, DB cleanup</td>
+                        <td><span class="badge badge-success">Spring Boot</span></td>
+                        <td>OdysseyCronApplication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>consumer</strong></td>
+                        <td>Service Bus consumer for leasing/incentives</td>
+                        <td><span class="badge badge-success">Spring Boot</span></td>
+                        <td>OdysseyApplication</td>
+                    </tr>
+                    <tr>
+                        <td><strong>availability</strong></td>
+                        <td>Service Bus subscriber for cart status</td>
+                        <td><span class="badge badge-success">Spring Boot</span></td>
+                        <td>Application</td>
+                    </tr>
+                    <tr>
+                        <td><strong>graphql-shared</strong></td>
+                        <td>Shared GraphQL schema definitions</td>
+                        <td><span class="badge badge-primary">Library</span></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>utilities</strong></td>
+                        <td>CLI utilities for developers</td>
+                        <td><span class="badge badge-warning">Tools</span></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>tests</strong></td>
+                        <td>Integration/smoke tests</td>
+                        <td><span class="badge badge-warning">Tests</span></td>
+                        <td>N/A</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Module Dependencies</h3>
+            <div class="highlight-box">
+                <p>All deployable modules (<strong>routes</strong>, <strong>search</strong>, <strong>cron</strong>, <strong>consumer</strong>, <strong>availability</strong>) depend on the <strong>library</strong> module for shared models, DAOs, clients, and configuration.</p>
+                <p>The <strong>graphql-shared</strong> module is used by both <strong>routes</strong> and <strong>search</strong> for shared GraphQL schema definitions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- APIs Section -->
+    <section id="apis">
+        <div class="container">
+            <h2>🔌 API Endpoints</h2>
+
+            <h3>GraphQL Queries (search module)</h3>
+            <div class="card-grid">
+                <div class="card module-card">
+                    <h4>🔍 Vehicle Queries</h4>
+                    <ul>
+                        <li><code>getVehicleByVin(vin)</code></li>
+                        <li><code>getVehicleById(id)</code></li>
+                        <li><code>getVehiclesById([ids])</code></li>
+                        <li><code>getVehiclesByVin([vins])</code></li>
+                        <li><code>checkAvailabilityOfVin(vin)</code></li>
+                        <li><code>checkAvailabilityOfVehicleId(id)</code></li>
+                    </ul>
+                </div>
+
+                <div class="card module-card">
+                    <h4>🔎 Search Queries</h4>
+                    <ul>
+                        <li><code>search(commonInputs)</code> - Full vehicle search with filters, sorting, pagination</li>
+                        <li><code>getFacets(facetFields, commonInputs)</code> - Get facet counts</li>
+                        <li><code>getSearchSuggestions(queryString)</code> - Autocomplete</li>
+                    </ul>
+                </div>
+
+                <div class="card module-card">
+                    <h4>🖼️ Image Queries</h4>
+                    <ul>
+                        <li><code>getVehicleImagesById(searchTerm)</code></li>
+                        <li>Returns images with multiple width variants</li>
+                        <li>Integrates with MaxDigital API</li>
+                    </ul>
+                </div>
+
+                <div class="card module-card">
+                    <h4>🧭 Page Load Queries</h4>
+                    <ul>
+                        <li><code>getDirectionForId(id)</code> - ID resolution hints</li>
+                        <li>Handles VIN, MaxDigital ID redirects</li>
+                        <li>Returns canonical vehicle or redirect suggestion</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>GraphQL Input Types</h3>
+            <pre><code>VehicleCommonInputs {
+  sortCriteria: SortCriteria?
+  filterInput: Filters?
+  paginationInput: PaginationInput?
+  searchTerm: String?
+  userLocation: UserLocation?
+}
+
+Filters {
+  leasableOnly: Boolean?
+  freeShipping: Boolean?
+  makeModelTrims: [MakeModelTrimFilter]?
+  vehicleConditions: [VehicleCondition]?
+  mileageRange: IntRange?
+  yearRange: IntRange?
+  priceRange: DoubleRange?
+  leaseRange: IntRange?
+  exteriorColors: [String]?
+  interiorColors: [String]?
+  bodyStyles: [String]?
+  fuelTypes: [String]?
+  driveTypes: [String]?
+  transmissions: [String]?
+  engines: [String]?
+}
+
+SortType enum (used for search scoring):
+  RECOMMENDED, HIGH_PRICE_NEW_CAR, HIGH_PRICE_USED_CAR,
+  LOW_PRICE_NEW_CAR, LOW_PRICE_USED_CAR,
+  SHIPPING_FEE_LOWEST, INVENTORY_NEWEST,
+  LOWEST_MILEAGE, NEWEST_YEAR, OLDEST_YEAR,
+  LEASING_LOWEST</code></pre>
+
+            <h3>REST Endpoints (routes module)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Handler</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-success">POST</span></td>
+                        <td>/impel/spin-notification</td>
+                        <td>ImpelNotificationHandler</td>
+                        <td>Process 360 spin notifications from Impel (validates, fetches spin URL, updates vehicle)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-primary">GET</span></td>
+                        <td>/sink/leasing</td>
+                        <td>LeasingSinkRouter</td>
+                        <td>Stream new vehicles for leasing (NDJSON with backpressure)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-primary">GET</span></td>
+                        <td>/search/score-weights</td>
+                        <td>SearchScoreWeightsHandler</td>
+                        <td>Get search score configurations (by sortType query param)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-primary">GET</span></td>
+                        <td>/search/score-weights/templates</td>
+                        <td>SearchScoreWeightsHandler</td>
+                        <td>List available block templates for score weights</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-success">POST</span></td>
+                        <td>/search/score-weights</td>
+                        <td>SearchScoreWeightsHandler</td>
+                        <td>Create new search score weight (auto-increments version)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-success">POST</span></td>
+                        <td>/search/score-weights/enable</td>
+                        <td>SearchScoreWeightsHandler</td>
+                        <td>Enable specific score weight version for a sortType</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-danger">DELETE</span></td>
+                        <td>/search/score-weights</td>
+                        <td>SearchScoreWeightsHandler</td>
+                        <td>Delete score weight version (cannot delete enabled version)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>GraphQL Mutations (routes module)</h3>
+            <div class="card-grid">
+                <div class="card module-card">
+                    <h4>🔧 Availability Mutations</h4>
+                    <ul>
+                        <li><code>updateManualSuppressions(vins, suppress)</code> — Toggle manual suppression for vehicles</li>
+                        <li><code>updatePurchasePending(vin, pending)</code> — Update purchase pending status</li>
+                    </ul>
+                </div>
+                <div class="card module-card">
+                    <h4>📁 Category & Feature Mutations</h4>
+                    <ul>
+                        <li><code>updateCategories(request)</code> — Create or update vehicle categories</li>
+                        <li><code>deleteCategoriesByName(request)</code> — Delete categories by name</li>
+                        <li><code>updateFeatures(request)</code> — Create or update features</li>
+                        <li><code>deleteFeaturesByName(request)</code> — Delete features by name</li>
+                    </ul>
+                </div>
+                <div class="card module-card">
+                    <h4>🧪 Test Mutations (dev/laptop only)</h4>
+                    <ul>
+                        <li><code>inputTestVehicle(vehicleRequest)</code> — Add vehicle to vehicleTest collection</li>
+                        <li><code>createTestVehicle(vin)</code> — Create test vehicle by VIN</li>
+                        <li><code>deleteTestVehicle(vin)</code> — Delete test vehicle</li>
+                        <li><code>dumpTestVehicleCollection()</code> — Drop entire vehicleTest collection</li>
+                    </ul>
+                </div>
+                <div class="card module-card">
+                    <h4>📊 Admin Queries (routes module)</h4>
+                    <ul>
+                        <li><code>getManualSuppressions()</code> — List manually suppressed active vehicles</li>
+                        <li><code>getPurchasePendings()</code> — List purchase-pending active vehicles</li>
+                        <li><code>getAllCategories()</code> — Get all categories sorted by sortOrder</li>
+                        <li><code>getAllFeatures(page?)</code> — Get all features with optional pagination</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Search Scoring System</h3>
+            <div class="highlight-box">
+                <h4>Configuration-Driven Ranking</h4>
+                <p>Search results are scored using MongoDB Atlas Search with versioned score weights stored in the database. Each sort type (RELEVANCE, PRICE_LOWEST, etc.) has customizable scoring factors.</p>
+
+                <h4>Key Scoring Mechanisms</h4>
+                <ul>
+                    <li><strong>Text Search Weights:</strong> Field-specific boosts (make: 10000, model: 10000, etc.)</li>
+                    <li><strong>Static Factors:</strong> Days in stock, availability status, condition, images</li>
+                    <li><strong>Dynamic Factors:</strong> User location-based shipping, regional leasing prices</li>
+                    <li><strong>NearBlock Scoring:</strong> Proximity scoring for price, mileage, year</li>
+                    <li><strong>Gauss Functions:</strong> Normal distribution curves for smooth scoring</li>
+                </ul>
+
+                <h4>Example: RELEVANCE (Recommended) Scoring</h4>
+                <ul>
+                    <li>Text match weights: 10000 for make/model/bodyStyle</li>
+                    <li>Days in stock proximity: origin=5, pivot=30 (newer inventory boosted)</li>
+                    <li>Financeable vehicle bonus: +10</li>
+                    <li>Spin URL (360 image) bonus: +60</li>
+                    <li>Good availability status: +10000</li>
+                    <li>Good condition + low mileage: +560</li>
+                    <li>Free shipping: +130</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Models Section -->
+    <section id="data">
+        <div class="container">
+            <h2>📊 Data Models</h2>
+
+            <h3>Core Domain Model: Vehicle</h3>
+            <div class="highlight-box">
+                <p><strong>Collection:</strong> <code>vehicleV3</code> in <code>shopInventory</code> database. The VIN serves as the primary key (<code>@BsonId</code>).</p>
+            </div>
+            <pre><code>Vehicle {
+  // Identity
+  vin: String              // @BsonId, @Id — primary key
+  vehicleId: String?       // Secondary ID (ObjectId)
+
+  // Status
+  status: InventoryStatus? // ACTIVE, INACTIVE, DELETED
+  manuallySuppressed: Boolean
+  financeable: Boolean
+
+  // Vehicle Info
+  ymmt: Ymmt?             // { year: Int?, make: String?, model: String?, trim: String? }
+  vehicleCondition: VehicleCondition? // NEW, USED, CPO, UNKNOWN
+  bodyStyle: String?
+  makeModel: String?       // Concatenated make+model for search
+  cabStyle: String?
+  bedStyle: String?
+  oneOwner: Boolean
+
+  // Pricing
+  price: Double?
+  priceInCents: Int?
+  msrp: Double?
+  dealerInvoicePrice: Double?
+  accessoryPrice: Double?
+  askingPrice: Double?
+  drivewayPrice: Double?
+  primaryBookValue: Double?
+  primaryBookName: String?
+
+  // Leasing
+  leasing: Leasing? {
+    canLease: Boolean?
+    defaultPrice: Int?     // Cents (from region 1)
+    regionalPrices: List&lt;RegionData&gt;? [{
+      regionId: Int?
+      amountInCents: Int?
+      expiresOn: String?
+    }]
+  }
+
+  // Availability
+  availability: Availability? {
+    purchasePending: Boolean
+    salesPending: Boolean
+    salesBooked: Boolean
+    inventoryInTransit: Boolean
+    reconOrderOpen: Boolean
+    enqueuedTime: Instant?
+  }
+
+  // Specifications
+  mileage: Int?
+  engine: String?
+  engineDescription: String?
+  displacement: String?
+  fuel: String?
+  transmission: String?
+  transmissionDetails: String?
+  driveType: String?
+  doors: Int?
+  rimSize: String?
+  mpg: Mpg? { combined: Int?, city: Int?, highway: Int? }
+
+  // Aesthetics
+  exteriorColor: Color? { name: String?, descriptive: String? }
+  interiorColor: Color? { name: String?, descriptive: String? }
+
+  // Media
+  image: Image? {
+    url: String?           // @Deprecated — use heroUrl
+    heroUrl: String?
+    spinUrl: String?       // 360 view from Impel/SpinCar
+    count: Int?
+  }
+
+  // Features
+  categoryFeatures: List&lt;CategoryFeatures&gt; [{ category, features: [String] }]
+  lifestyleTags: List&lt;String&gt;
+  vehiclePackage: VehiclePackage? {
+    codes: List&lt;String&gt;
+    options: List&lt;ConsumerOption&gt; [{ code, name, feature, msrp }]
+  }
+
+  // Dealer Info
+  dealer: Dealer? {
+    id: String?
+    name: String?
+    address: String?
+    city: String?
+    zip: String?
+    state: String?
+    region: Int?
+    zoneZips: List&lt;String&gt;?
+    stateShippingMap: Map&lt;String, Double&gt;?
+  }
+  dealerStockId: String?
+  vehicleLocation: GeoPoint? { longitude, latitude }
+
+  // Metadata
+  lastSeenJobId: String?
+  deletedJobId: String
+  updateTimestamp: Instant?
+  daysInStock: Int?
+  inventoryDate: String?
+  blackbookUvc: String?
+  monroneyStickerUrl: String?
+  hints: Hints? {         // 30+ EDS hint fields
+    modelCode, optionCode, packageCode, chromeStyleId,
+    aspiration, bedLength, curbWeight, cylinders, doors,
+    drivetrain, engineCode, engineDisplacement, fuelInduction,
+    fuelType, transmissionCode, wheelbase, trim, bodyType, ...
+  }
+
+  // Computed (not persisted — @BsonIgnore)
+  score: Double            // From $search aggregations
+  shippingFee: Double?     // Calculated at query time
+  sortField: Any?          // For custom sort projections
+}</code></pre>
+
+            <h3>MongoDB Collections</h3>
+            <div class="highlight-box">
+                <p><strong>Database:</strong> <code>shopInventory</code> (MongoDB Atlas). Access via KMongo Reactive — not Spring Data.</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Collection</th>
+                        <th>Purpose</th>
+                        <th>Key Indexes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>vehicleV3</strong></td>
+                        <td>Live inventory (primary)</td>
+                        <td>22+ indexes: status+suppressed, price, year, make+model, VIN, dealer.id, dealer.state, leasing.canLease, availability, bodyStyle, vehicleCondition, mileage, daysInStock</td>
+                    </tr>
+                    <tr>
+                        <td><strong>temp_vehicleV3_*</strong></td>
+                        <td>Staging for EDS imports (auto-dropped after 5 min or 28 days)</td>
+                        <td>None (temporary)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>searchSuggestion</strong></td>
+                        <td>Autocomplete data</td>
+                        <td>Unique on <code>value</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>postalCodeOemRegions</strong></td>
+                        <td>Postal code → OEM region mapping</td>
+                        <td><code>postalCode</code> (@BsonId)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>searchScoreWeights</strong></td>
+                        <td>Versioned search ranking configs per SortType</td>
+                        <td>Unique on (<code>sortType</code>, <code>version</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>inventoryJobDetails</strong></td>
+                        <td>Import job history and status</td>
+                        <td><code>runId</code> (@Id)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>vehicleTest</strong></td>
+                        <td>Functional test vehicles (dev/laptop only)</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><strong>vehicleSearchRelevancyTest</strong></td>
+                        <td>Search relevancy test data</td>
+                        <td>None</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Atlas Search Indexes (Terraform-managed)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Index Name</th>
+                        <th>Collection</th>
+                        <th>Type</th>
+                        <th>Key Fields</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>shopSearch</strong></td>
+                        <td>vehicleV3</td>
+                        <td>Full-text + facets</td>
+                        <td>50+ mapped fields: ymmt (year/make/model/trim with facets), bodyStyle, makeModel (autocomplete), price, mileage, leasing (embeddedDocuments), dealer, vehicleCondition (stringFacet), availability, image, categoryFeatures, and more</td>
+                    </tr>
+                    <tr>
+                        <td><strong>shopSuggestions</strong></td>
+                        <td>searchSuggestion</td>
+                        <td>Autocomplete</td>
+                        <td><code>value</code> field with lucene.standard analyzer</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Key Enums</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>VehicleCondition</h4>
+                    <p><small>models/Vehicle.kt</small></p>
+                    <ul>
+                        <li>NEW</li>
+                        <li>USED</li>
+                        <li>CPO (Certified Pre-Owned)</li>
+                        <li>UNKNOWN</li>
+                    </ul>
+                    <p><small>Companion: <code>caseInsensitiveValueOf()</code>, <code>fromConditionAndCertification()</code></small></p>
+                </div>
+                <div class="card">
+                    <h4>InventoryStatus</h4>
+                    <p><small>models/InventoryStatus.kt</small></p>
+                    <ul>
+                        <li>ACTIVE</li>
+                        <li>INACTIVE</li>
+                        <li>DELETED</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>SortType</h4>
+                    <p><small>models/SearchScoreWeights.kt</small></p>
+                    <ul>
+                        <li>RECOMMENDED</li>
+                        <li>HIGH_PRICE_NEW_CAR / HIGH_PRICE_USED_CAR</li>
+                        <li>LOW_PRICE_NEW_CAR / LOW_PRICE_USED_CAR</li>
+                        <li>SHIPPING_FEE_LOWEST</li>
+                        <li>INVENTORY_NEWEST</li>
+                        <li>LOWEST_MILEAGE</li>
+                        <li>NEWEST_YEAR / OLDEST_YEAR</li>
+                        <li>LEASING_LOWEST</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>JobStatus</h4>
+                    <p><small>models/database/JobStatus.kt</small></p>
+                    <ul>
+                        <li>RUNNING</li>
+                        <li>SUCCEEDED</li>
+                        <li>FAILED</li>
+                        <li>CANCELLED</li>
+                        <li>KILLED</li>
+                        <li>ALREADY_RUNNING</li>
+                        <li>NO_DOCUMENT_FOUND</li>
+                        <li>SUSPICIOUS_FILE</li>
+                        <li>INVALID_DOCUMENT</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>InventoryDeltaAction</h4>
+                    <p><small>models/database/InventoryDelta.kt</small></p>
+                    <ul>
+                        <li>ADD</li>
+                        <li>UPDATE</li>
+                        <li>DELETE</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>ImportType / ImportRunner</h4>
+                    <p><small>models/database/InventoryJobDetails.kt</small></p>
+                    <ul>
+                        <li>ImportType: FULL, DELTA, UNKNOWN</li>
+                        <li>ImportRunner: READ_BLOBS, READ_VEHICLES, READ_EDS_VEHICLES, READ_SEARCH_TEST_VEHICLES</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deployment Section -->
+    <section id="deployment">
+        <div class="container">
+            <h2>🚀 Deployment Pipeline</h2>
+
+            <h3>Environments</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Environment</th>
+                        <th>Trigger</th>
+                        <th>Replicas</th>
+                        <th>Auto-Scale</th>
+                        <th>Kubernetes Cluster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>DEV</strong></td>
+                        <td>Auto (main branch)</td>
+                        <td>1</td>
+                        <td>Disabled</td>
+                        <td>AKS Dev (westus2)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UAT</strong></td>
+                        <td>Manual</td>
+                        <td>3</td>
+                        <td>3-12 @ 70% CPU</td>
+                        <td>AKS UAT (westus2)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PROD</strong></td>
+                        <td>Manual + CR</td>
+                        <td>3</td>
+                        <td>3-12 @ 70% CPU</td>
+                        <td>AKS Prod (westus2)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LAPTOP</strong></td>
+                        <td>Local dev</td>
+                        <td>1</td>
+                        <td>N/A</td>
+                        <td>Docker Compose</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>CI/CD Stages</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">1. Build → Gradle clean build</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">2. Test → JUnit 5 + MockK tests</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">3. Coverage → Kover code coverage report</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">4. Lint → Kotlinter code style check</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">5. Docker → Multi-stage build with DataDog agent</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">6. Terraform → Apply MongoDB indexes & Service Bus</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">7. Helm Deploy → 5 services to AKS</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">8. Smoke Tests → Post-deploy validation</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">9. Postman Tests → Functional API tests</div>
+            </div>
+
+            <h3>Deployed Services</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Helm Chart Type</th>
+                        <th>Endpoint Path</th>
+                        <th>Resource Requests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>odyssey-api</strong></td>
+                        <td>api (v5)</td>
+                        <td>/shop/</td>
+                        <td>1 CPU, 1Gi RAM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>odyssey-search-graphql</strong></td>
+                        <td>api</td>
+                        <td>/shop-graphql/</td>
+                        <td>1 CPU, 1Gi RAM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>odyssey-consumer</strong></td>
+                        <td>headless</td>
+                        <td>/shop-consumer/</td>
+                        <td>1 CPU, 1Gi RAM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>odyssey-availability-sub</strong></td>
+                        <td>headless</td>
+                        <td>/shop-availability-sub/</td>
+                        <td>1 CPU, 1Gi RAM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>odyssey-cron</strong></td>
+                        <td>cron</td>
+                        <td>N/A (background jobs)</td>
+                        <td>1 CPU, 4Gi RAM</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Infrastructure as Code</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Terraform Modules</h4>
+                    <ul>
+                        <li><strong>MongoDB Atlas Search Indexes:</strong> shopSearch (50+ fields, facets, autocomplete), shopSuggestions</li>
+                        <li><strong>Service Bus:</strong> Topics (inventory-delta, leasing-incentives, cart-status-update, vehicle-data) with subscriptions, TTLs, lock durations</li>
+                        <li><strong>Monitoring:</strong> Azure Monitor alerts, dashboards, custom queries</li>
+                    </ul>
+                    <p><small>Paths: <code>terraform/infrastructure/{dev,uat,prod}/</code>, <code>terraform/monitoring/</code></small></p>
+                </div>
+                <div class="card">
+                    <h4>Azure Resources</h4>
+                    <ul>
+                        <li><strong>Service Bus Topics:</strong> 4 topics — inventory-delta (P14D TTL), leasing-incentives (P2D TTL), cart-status-update, vehicle-data (PT15M TTL)</li>
+                        <li><strong>Blob Storage:</strong> Container: inbound, prefix: CVP/Driveway-Merchandising-V2/, GZIP TSV files</li>
+                        <li><strong>Key Vaults:</strong> 5 vaults per environment for service secrets</li>
+                        <li><strong>DataDog:</strong> APM via dd-java-agent, runtime metrics, log injection</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Local Development (Docker Compose)</h4>
+                    <ul>
+                        <li><strong>MongoDB 4.4:</strong> Port 27020 (not default 27017)</li>
+                        <li><strong>Azurite 3.26.0:</strong> Blob on port 10010, Queue on 10011</li>
+                        <li><strong>Profile:</strong> <code>--spring.profiles.active=laptop</code></li>
+                        <li><strong>Prerequisite:</strong> ADO_ARTIFACTS_TOKEN env var</li>
+                    </ul>
+                    <p><small>Note: Atlas Search queries won't work locally. Cron jobs disabled. Service Bus uses dummy senders.</small></p>
+                </div>
+            </div>
+
+            <h3>Docker Multi-Stage Build</h3>
+            <pre><code># Stage 1: Builder
+FROM gradle:jdk21 as builder
+COPY . /home/gradle
+WORKDIR /home/gradle/${PROJECT}
+RUN ../gradlew bootjar --parallel
+RUN wget -O dd-java-agent.jar 'https://dtdg.co/latest-java-tracer'
+
+# Stage 2: Runtime
+FROM ${REGISTRY_URL}/devops/eclipse-temurin-21:latest
+COPY --from=builder /home/gradle/${PROJECT}/build/libs/${PROJECT}-1.0.0.jar .
+COPY --from=builder /home/gradle/${PROJECT}/dd-java-agent.jar .
+EXPOSE 8080
+ENTRYPOINT java -XX:MaxRAMPercentage=75.0 -javaagent:dd-java-agent.jar -jar ${PROJECT}.jar</code></pre>
+
+            <h3>Helm Chart Configuration</h3>
+            <div class="highlight-box">
+                <p>Charts are stored in <code>pipelines/helm/</code> with per-service directories. Each service has base <code>values.yaml</code> plus environment overrides (<code>values-dev.yaml</code>, <code>values-uat.yaml</code>, <code>values-prod.yaml</code>).</p>
+            </div>
+            <pre><code># Example: pipelines/helm/odyssey-api/values.yaml
+application:
+  name: odyssey-api
+  majorVersion: v5
+  versions:
+    - name: v5
+      latest: true
+
+deployment:
+  replicas: 1
+  containerPort: 8080
+  agentPool: backend
+  resources:
+    requests: { cpu: 1, memory: 1Gi }
+    limits: { cpu: 1, memory: 1Gi }
+
+dataDog:
+  logsInjectionEnabled: "true"
+  runtimeMetricsEnabled: "true"
+
+autoScaling:
+  enabled: false    # true in UAT/PROD with minReplicas: 3, maxReplicas: 12
+  targetCPUUtilizationPercentage: 70
+
+mesh:
+  hosts: ["api-cluster.{env}.driveway.cloud"]
+  matchPath: "/shop/"</code></pre>
+        </div>
+    </section>
+
+    <!-- Cron Jobs Section -->
+    <section id="cron">
+        <div class="container">
+            <h2>⏰ Scheduled Cron Jobs</h2>
+
+            <h3>Job Schedules</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Job</th>
+                        <th>Schedule</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>EDS Vehicle Import</strong></td>
+                        <td>0 0,30 * * * * <br><small>(Every 30 min)</small></td>
+                        <td>Import vehicle inventory from Azure Blob</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Postal Code Region Sync</strong></td>
+                        <td>0 45 0,6,12,18 * * * <br><small>(00:45, 06:45, 12:45, 18:45)</small></td>
+                        <td>Sync OEM region mappings from Incentives API</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metric Update</strong></td>
+                        <td>30 */5 * * * * <br><small>(Every 5 min at :30)</small></td>
+                        <td>Update 360 spin photo count metric</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stale Records Cleanup</strong></td>
+                        <td>0 15 * * * * <br><small>(Every hour at :15)</small></td>
+                        <td>Delete vehicles with status=DELETED</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Temp Collections Cleanup</strong></td>
+                        <td>0 10 8 * * * <br><small>(Daily at 8:10 AM)</small></td>
+                        <td>Drop temp collections older than 28 days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Leasing Expiry Check</strong></td>
+                        <td>On-demand (part of vehicle import)</td>
+                        <td>Update leasing status for expired programs</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>EDS Vehicle Import Flow</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <strong>1. Find File:</strong> Locate newest untagged EDS file in Azure Blob (CVP/Driveway-Merchandising-V2/)
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>2. Parse TSV:</strong> Download GZIP file, parse CSV rows to Vehicle objects
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>3. Stage Import:</strong> Batch insert 500 at a time to temp_vehicleV3_&lt;timestamp&gt;
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>4. Safety Check:</strong> Verify delta &lt; 15,000 vehicles (prevent large deletes)
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>5. Generate Deltas:</strong> Compare temp vs live, identify ADD/UPDATE/DELETE
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>6. Publish Events:</strong> Send InventoryDelta messages to Service Bus topic
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>7. Merge to Live:</strong> Copy from temp to vehicleV3 (preserves leasing, suppression)
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>8. Mark Deleted:</strong> Flag missing vehicles as DELETED
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>9. Update Suggestions:</strong> Refresh searchSuggestions collection
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                    <strong>10. Cleanup:</strong> Drop temp collection after 5-min timeout
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4>⚠️ Safety Mechanisms</h4>
+                <ul>
+                    <li><strong>Large Delete Protection:</strong> Import fails if more than 15,000 vehicles would be deleted (configurable via <code>cron.suspiciousDeltaThreshold</code>). Marks job as SUSPICIOUS_FILE.</li>
+                    <li><strong>Temporary Staging:</strong> All imports go to <code>temp_vehicleV3_&lt;timestamp&gt;</code> collection first. On failure, temp collection is dropped and job is marked FAILED.</li>
+                    <li><strong>Field Preservation:</strong> During merge, leasing data, manual suppressions, purchase pending, availability state, and enqueuedTime are preserved from the live collection.</li>
+                    <li><strong>Job Locking:</strong> Prevents concurrent imports — if a job is RUNNING, new attempts get ALREADY_RUNNING status.</li>
+                    <li><strong>Batch Processing:</strong> Vehicles are inserted in batches of 500 with 5-semaphore concurrency control.</li>
+                    <li><strong>Duplicate Key Handling:</strong> Detects MongoDB error code 11000 for duplicate VINs within the same file.</li>
+                    <li><strong>Temp Collection Cleanup:</strong> Auto-dropped 5 minutes after import, plus daily cleanup of collections older than 28 days.</li>
+                    <li><strong>OpenTracing Integration:</strong> Each import run creates tracing spans with baggage items for debugging.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations Section -->
+    <section id="integrations">
+        <div class="container">
+            <h2>🔗 External Integrations</h2>
+
+            <h3>Internal Lithia Services</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Libra API</h4>
+                    <p><strong>Endpoint:</strong> <code>admin-api/v5</code></p>
+                    <p><strong>Purpose:</strong> Dealership and zone data</p>
+                    <ul>
+                        <li>GET /dealerships?activity=ZERO_DOLLAR_SHIPPING</li>
+                        <li>GET /zones (free shipping zip codes)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Incentives API</h4>
+                    <p><strong>Endpoint:</strong> <code>incentives-api.marketplace/v1</code></p>
+                    <p><strong>Purpose:</strong> Regional pricing data</p>
+                    <ul>
+                        <li>GET /regions (postal code → OEM regions)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Tax & Fee API</h4>
+                    <p><strong>Endpoint:</strong> <code>taxes-fees-api/v1</code></p>
+                    <p><strong>Purpose:</strong> Shipping cost matrix</p>
+                    <ul>
+                        <li>GET /shipping-config</li>
+                        <li>Returns state-to-state shipping costs</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Finance Service Bus</h4>
+                    <p><strong>Topic:</strong> <code>leasing-incentives-topic</code></p>
+                    <p><strong>Purpose:</strong> Leasing price updates</p>
+                    <ul>
+                        <li>Publishes regional lease pricing</li>
+                        <li>odyssey-consumer subscribes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>External Third-Party Services</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>MaxDigital (Photos)</h4>
+                    <p><strong>Endpoint:</strong> <code>https://api.maxapps.io/graphql</code></p>
+                    <p><strong>Protocol:</strong> GraphQL</p>
+                    <p><strong>Purpose:</strong> Vehicle photo galleries</p>
+                    <ul>
+                        <li>Query: GetGalleryImages</li>
+                        <li>Returns 6 image sizes: icon, thumb, medium, large, gallery, raw</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Impel/SpinCar (360 Views)</h4>
+                    <p><strong>Endpoint:</strong> <code>https://wa-detection-api.spincar.com</code></p>
+                    <p><strong>Auth:</strong> SHA-512 hash authentication</p>
+                    <p><strong>Purpose:</strong> 360-degree vehicle spins</p>
+                    <ul>
+                        <li>Fetches spin URLs by VIN</li>
+                        <li>5 retries with backoff</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Azure Blob Storage</h4>
+                    <p><strong>Container:</strong> <code>inbound</code></p>
+                    <p><strong>Path:</strong> <code>CVP/Driveway-Merchandising-V2/</code></p>
+                    <p><strong>Purpose:</strong> EDS inventory file storage</p>
+                    <ul>
+                        <li>GZIP-compressed TSV files</li>
+                        <li>Metadata tracking for processed files</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h4>Azure Service Bus</h4>
+                    <p><strong>Topics:</strong> 4 topics</p>
+                    <p><strong>Purpose:</strong> Event-driven messaging</p>
+                    <ul>
+                        <li>inventory-delta-topic (publishes)</li>
+                        <li>leasing-incentives-topic (subscribes)</li>
+                        <li>cart-status-update-topic (subscribes)</li>
+                        <li>vehicle-data-topic (subscribes)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Message Consumers</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Consumer</th>
+                        <th>Topic / Subscription</th>
+                        <th>Message Type</th>
+                        <th>Processing Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>odyssey-consumer</strong><br><small>LeaseTopicReceiver</small></td>
+                        <td>leasing-incentives-topic<br><small>sub: lease-consumer-sub</small><br><small>TTL: P2D, Lock: PT5M, Retries: 5</small></td>
+                        <td>LeaseIncentivesMessage<br><small>(LEASING or INCENTIVE type)</small></td>
+                        <td>
+                            <strong>LEASING:</strong> LeaseHandler — fetches vehicle by VIN, creates Leasing object with regional prices sorted by regionId, sets defaultPrice from region 1, updates canLease flag (only for NEW vehicles).<br>
+                            <strong>INCENTIVE:</strong> IncentivesHandler — currently no-op (logs warning, returns Mono.empty()).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>odyssey-availability-sub</strong><br><small>CartTopicConsumerStarter</small></td>
+                        <td>cart-status-update-topic<br><small>sub: vehicle-availability-subscriber-sub</small><br><small>Max retries: 60 (~1 hour)</small></td>
+                        <td>CartStatusUpdateNotificationMessage</td>
+                        <td>AvailabilityRequestHandler — validates message recency (enqueuedTime &gt; vehicle's lastEnqueuedTime), updates purchasePending flag. Stale messages are acknowledged without processing. Missing vehicles return Success (no retry).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>External Systems</strong></td>
+                        <td>inventory-delta-topic<br><small>TTL: P14D (14 days)</small></td>
+                        <td>InventoryDelta</td>
+                        <td>Published by odyssey-cron during EDS import. Contains ADD/UPDATE/DELETE actions with vehicle metadata. Messages are chunked to fit per-message byte limits (256KB default).</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Data Flow: Leasing Update</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">Finance Service publishes to leasing-incentives-topic</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">odyssey-consumer receives LeaseIncentivesMessage</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">LeaseHandler.handle() fetches vehicle by VIN</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Updates vehicle.leasing: canLease, defaultPrice, regionalPrices</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Persists updated vehicle to MongoDB</div>
+            </div>
+
+            <h3>Data Flow: Cart Availability</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">Shopping Cart service publishes to cart-status-update-topic</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">odyssey-availability-sub receives CartStatusUpdateMessage</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Validates message recency (enqueuedTime &gt; lastEnqueuedTime)</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Updates vehicle.availability.purchasePending flag</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">Persists to MongoDB with timestamp</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testing Section -->
+    <section id="testing">
+        <div class="container">
+            <h2>🧪 Testing Stack & Patterns</h2>
+
+            <h3>Testing Frameworks</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🔬 Unit Testing</h4>
+                    <ul>
+                        <li><strong>JUnit 5</strong> (Jupiter) with <code>useJUnitPlatform()</code></li>
+                        <li><strong>MockK 1.13.4</strong> — <code>mockk()</code>, <code>every</code>, <code>coEvery</code>, <code>verify</code>, <code>coVerify</code>, <code>coVerifySequence</code></li>
+                        <li><strong>Slot captures</strong> — <code>slot&lt;T&gt;()</code> for asserting mock arguments</li>
+                        <li><strong>Reactor Test 3.5.9</strong> — <code>StepVerifier</code>, <code>TestPublisher</code></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🔗 Integration Testing</h4>
+                    <ul>
+                        <li><strong>Spring Boot Test</strong> — <code>@SpringBootTest</code> for full context</li>
+                        <li><strong>OkHttp 4.12.0</strong> — HTTP client in smoke tests</li>
+                        <li><strong>Postman/Newman</strong> — Functional API tests</li>
+                        <li><strong>Kover</strong> — Kotlin code coverage reports</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>⚡ Coroutine Testing</h4>
+                    <ul>
+                        <li><code>runBlocking { }</code> for synchronous execution</li>
+                        <li><code>runTest { }</code> with <code>@OptIn(ExperimentalCoroutinesApi::class)</code></li>
+                        <li><code>kotlinx-coroutines-test:1.7.3</code></li>
+                        <li>BlockHound JVM arg: <code>-XX:+AllowRedefinitionToAddDeleteMethods</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Test Conventions</h3>
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>Naming:</strong> Backtick descriptive format — <code>`happy path - expected interactions`</code></li>
+                    <li><strong>Pattern:</strong> Arrange-Act-Assert with <code>@BeforeEach</code> setup</li>
+                    <li><strong>MockK Setup:</strong> <code>@MockK lateinit var mockDao: VehicleDao</code> + <code>MockKAnnotations.init(this)</code> + <code>clearAllMocks()</code></li>
+                    <li><strong>Reactive Assertions:</strong> <code>StepVerifier.create(mono).expectNext(...).expectComplete().verify()</code></li>
+                    <li><strong>Pipeline Tests:</strong> Compare BSON output: <code>blocks.map { it.toMongoDocument() }.toMongoCompatibleString()</code></li>
+                </ul>
+            </div>
+
+            <h3>Test Example Pattern</h3>
+            <pre><code>class LeaseHandlerTest {
+    @MockK lateinit var vehicleDao: VehicleDao
+
+    @BeforeEach
+    fun setup() {
+        MockKAnnotations.init(this)
+        clearAllMocks()
+    }
+
+    @Test
+    fun `handle - new vehicle with lease data - updates leasing`() {
+        val vinSlot = slot&lt;String&gt;()
+        val leasingSlot = slot&lt;Leasing&gt;()
+
+        every { vehicleDao.getByVin(any()) } returns Mono.just(vehicle)
+        every {
+            vehicleDao.updateVehicleField(
+                vin = capture(vinSlot),
+                field = Vehicle::leasing,
+                value = capture(leasingSlot)
+            )
+        } returns Mono.empty()
+
+        StepVerifier.create(leaseHandler.handle(leasingMessage))
+            .expectComplete()
+            .verify()
+
+        assertEquals(true, leasingSlot.captured.canLease)
+        assertEquals(vehicle.vin, vinSlot.captured)
+    }
+}</code></pre>
+
+            <h3>Test Commands</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Scope</th>
+                        <th>Includes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>./gradlew clean verify</code></td>
+                        <td>All modules</td>
+                        <td>Tests + Kover coverage + Kotlinter lint</td>
+                    </tr>
+                    <tr>
+                        <td><code>./gradlew :library:test</code></td>
+                        <td>Library module only</td>
+                        <td>Unit tests for models, DAOs, clients, aggregation</td>
+                    </tr>
+                    <tr>
+                        <td><code>./gradlew :search:test</code></td>
+                        <td>Search module only</td>
+                        <td>Pipeline builder tests, query resolver tests</td>
+                    </tr>
+                    <tr>
+                        <td><code>./gradlew :tests:test</code></td>
+                        <td>Integration/smoke tests</td>
+                        <td>Requires deployed environment (set SPRING_PROFILES_ACTIVE)</td>
+                    </tr>
+                    <tr>
+                        <td><code>./gradlew formatKotlin</code></td>
+                        <td>All modules</td>
+                        <td>Auto-fix Kotlinter lint issues</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <h3>🚗 Odyssey API - Driveway.com Vehicle Platform</h3>
+            <p>Kotlin · Spring Boot 3 · MongoDB Atlas · Azure Cloud · GraphQL</p>
+            <p style="margin-top: 1rem; opacity: 0.7;">
+                Built with Spring Boot 3.4.3 • Spring WebFlux 6.2.3 • Kotlin 1.9.20 • JDK 21 • Gradle 8.5 • KMongo 4.7.1
+            </p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">
+                Generated: February 2026
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Wrap tables for horizontal scroll on small screens
+        document.querySelectorAll('.container table').forEach(table => {
+            if (!table.closest('.table-wrap')) {
+                const wrap = document.createElement('div');
+                wrap.className = 'table-wrap';
+                table.parentNode.insertBefore(wrap, table);
+                wrap.appendChild(table);
+            }
+        });
+
+        // Animate on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all cards and flow steps
+        document.querySelectorAll('.card, .flow-step, table').forEach(el => {
+            el.classList.add('animate-on-scroll');
+            observer.observe(el);
+        });
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('nav a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+        });
+
+        // Add active class to nav on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('nav a');
+
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.style.background = 'var(--primary)';
+                    link.style.color = 'white';
+                } else {
+                    link.style.background = 'transparent';
+                    link.style.color = 'var(--dark)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

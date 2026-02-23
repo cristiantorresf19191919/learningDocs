@@ -26,6 +26,10 @@ const links = [
   { to: '/odyssey-gradle', label: 'Gradle' },
   { to: '/ownership-landing', label: 'Ownership Landing' },
   { to: '/reactor-operators', label: 'Reactor Operators' },
+  { to: '/search-pipeline', label: 'Search Pipeline' },
+  { to: '/odyssey-documentation', label: 'Odyssey Docs' },
+  { to: '/odyssey-search-query-logic', label: 'Search Query Logic' },
+  { to: '/odyssey-technical-guide', label: 'Technical Guide' },
 ] as const;
 
 /* ------------------------------------------------------------------ */
