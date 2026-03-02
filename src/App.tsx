@@ -25,6 +25,7 @@ import SearchFlowDeepDivePage from './pages/SearchFlowDeepDivePage';
 import OdysseyDocumentationPage from './pages/OdysseyDocumentationPage';
 import OdysseySearchQueryLogicPage from './pages/OdysseySearchQueryLogicPage';
 import OdysseyTechnicalGuidePage from './pages/OdysseyTechnicalGuidePage';
+import OdysseyArchitectureDiagramsPage from './pages/OdysseyArchitectureDiagramsPage';
 
 /* ---------- routes ---------- */
 
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/odyssey-documentation" element={<OdysseyDocumentationPage />} />
         <Route path="/odyssey-search-query-logic" element={<OdysseySearchQueryLogicPage />} />
         <Route path="/odyssey-technical-guide" element={<OdysseyTechnicalGuidePage />} />
+        <Route path="/odyssey-architecture-diagrams" element={<OdysseyArchitectureDiagramsPage />} />
       </Route>
     </Routes>
   );

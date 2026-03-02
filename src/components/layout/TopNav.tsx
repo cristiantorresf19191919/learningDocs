@@ -30,6 +30,7 @@ const links = [
   { to: '/odyssey-documentation', label: 'Odyssey Docs' },
   { to: '/odyssey-search-query-logic', label: 'Search Query Logic' },
   { to: '/odyssey-technical-guide', label: 'Technical Guide' },
+  { to: '/odyssey-architecture-diagrams', label: 'Architecture Diagrams' },
 ] as const;
 
 /* ------------------------------------------------------------------ */

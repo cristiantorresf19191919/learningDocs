@@ -286,6 +286,14 @@ const odysseyNavCards: NavCard[] = [
     color: c.accent3,
     icon: bookIcon,
   },
+  {
+    title: 'Architecture Diagrams',
+    to: '/odyssey-architecture-diagrams',
+    description:
+      '12 interactive Mermaid diagrams: system architecture, module dependencies, EDS import, search pipeline, Service Bus flows, CI/CD, MongoDB ER, vehicle lifecycle.',
+    color: c.cyan,
+    icon: archIcon,
+  },
 ];
 
 interface FeatureHighlight {
